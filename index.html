@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0f0e17;
+    --surface: #1a1927;
+    --card: #23213a;
+    --border: #2e2c4a;
+    --accent: #f7a72b;
+    --accent2: #7c6af7;
+    --correct: #3ecf8e;
+    --error: #f7536a;
+    --text: #fffffe;
+    --muted: #a7a3c2;
+    --key-bg: #2e2c4a;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Baloo 2', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(ellipse at 30% 20%, rgba(124,106,247,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 80%, rgba(247,167,43,0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { width:100%; max-width:880px; position:relative; z-index:1; }
+
+  .header { text-align:center; margin-bottom:24px; }
+  .header h1 {
+    font-size:2rem; font-weight:800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+  .header p { color:var(--muted); font-size:0.85rem; margin-top:4px; }
+
+  /* Shift warning banner */
+  .shift-warning {
+    display: none;
+    background: rgba(247,83,106,0.15);
+    border: 1.5px solid var(--error);
+    border-radius: 10px;
+    padding: 8px 16px;
+    color: var(--error);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 14px;
+    animation: flashBanner 0.3s ease;
+  }
+  .shift-warning.show { display: block; }
+  @keyframes flashBanner {
+    0% { opacity:0; transform:translateY(-6px); }
+    100% { opacity:1; transform:translateY(0); }
+  }
+
+  /* Tabs */
+  .tabs {
+    display:flex; gap:8px; margin-bottom:18px;
+    background:var(--surface); border-radius:14px; padding:6px;
+    border:1px solid var(--border);
+  }
+  .tab {
+    flex:1; padding:9px 6px; border-radius:10px; border:none;
+    background:transparent; color:var(--muted);
+    font-family:'Baloo 2',sans-serif; font-size:0.8rem; font-weight:600;
+    cursor:pointer; transition:all 0.2s; text-align:center;
+  }
+  .tab.active { background:var(--card); color:var(--accent); box-shadow:0 2px 12px rgba(247,167,43,0.15); }
+  .tab:hover:not(.active) { color:var(--text); }
+
+  /* Word panel */
+  .word-panel {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:16px; padding:16px; margin-bottom:18px;
+  }
+  .panel-title { font-size:0.75rem; color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
+  .word-grid { display:flex; flex-wrap:wrap; gap:7px; }
+  .word-chip {
+    font-family:'Noto Sans Devanagari',sans-serif; font-size:1rem;
+    padding:5px 13px; border-radius:20px; border:1.5px solid var(--border);
+    background:var(--card); color:var(--muted); cursor:pointer; transition:all 0.18s; user-select:none;
+  }
+  .word-chip.selected { border-color:var(--accent2); color:var(--text); background:rgba(124,106,247,0.15); }
+  .word-chip:hover { border-color:var(--accent2); color:var(--text); }
+  .word-chip.select-all { border-color:var(--accent); color:var(--accent); font-family:'Baloo 2',sans-serif; font-size:0.8rem; }
+  .word-chip.select-all.selected { background:rgba(247,167,43,0.15); }
+
+  /* Stats */
+  .stats { display:flex; gap:10px; margin-bottom:18px; }
+  .stat-card { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 8px; text-align:center; }
+  .stat-val { font-size:1.7rem; font-weight:800; line-height:1; }
+  .stat-val.green { color:var(--correct); }
+  .stat-val.red { color:var(--error); }
+  .stat-val.gold { color:var(--accent); }
+  .stat-val.purple { color:var(--accent2); }
+  .stat-label { font-size:0.68rem; color:var(--muted); margin-top:3px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+
+  /* Arena */
+  .arena {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:20px; padding:28px 24px; margin-bottom:18px;
+    text-align:center; min-height:180px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    position:relative;
+  }
+  .arena.has-error { border-color: rgba(247,83,106,0.4); }
+
+  .word-meaning { color:var(--muted); font-size:0.88rem; margin-bottom:10px; }
+  .current-word {
+    font-family:'Noto Sans Devanagari',sans-serif;
+    font-size:3rem; font-weight:700; letter-spacing:8px;
+    margin-bottom:12px; display:flex; gap:2px;
+    justify-content:center; flex-wrap:wrap; min-height:60px;
+    align-items:center;
+  }
+
+  .char { display:inline-block; transition:color 0.1s, transform 0.1s; border-bottom:3px solid transparent; padding-bottom:2px; }
+  .char.pending { color:var(--muted); }
+  .char.correct { color:var(--correct); border-bottom-color:var(--correct); }
+  .char.error { color:var(--error); border-bottom-color:var(--error); animation:shake 0.25s; }
+  .char.current { color:var(--text); border-bottom-color:var(--accent); animation:blink-cur 1s infinite; }
+
+  @keyframes blink-cur { 0%,100%{border-bottom-color:var(--accent);} 50%{border-bottom-color:transparent;} }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+
+  .romanized { color:var(--accent2); font-size:0.83rem; font-style:italic; opacity:0.8; }
+
+  /* Input display (shows typed chars) */
+  .typed-display {
+    margin-top:10px;
+    font-family:'Noto Sans Devanagari',sans-serif;
+    font-size:1.1rem;
+    color:var(--muted);
+    min-height:28px;
+    letter-spacing:3px;
+  }
+
+  /* Status badge */
+  .status-badge {
+    position:absolute; top:12px; right:16px;
+    font-size:0.76rem; font-weight:700;
+    padding:4px 10px; border-radius:20px; display:none;
+  }
+  .status-badge.correct { background:rgba(62,207,142,0.15); color:var(--correct); display:block; }
+  .status-badge.error { background:rgba(247,83,106,0.15); color:var(--error); display:block; }
+
+  /* Backspace hint */
+  .backspace-hint {
+    position:absolute; bottom:12px; right:16px;
+    font-size:0.72rem; color:var(--muted);
+    background:var(--card); border:1px solid var(--border);
+    border-radius:8px; padding:3px 9px;
+    display:none;
+  }
+  .backspace-hint.show { display:block; }
+
+  /* Progress */
+  .progress-bar { width:100%; height:4px; background:var(--border); border-radius:4px; margin-bottom:18px; overflow:hidden; }
+  .progress-fill { height:100%; background:linear-gradient(90deg,var(--accent2),var(--accent)); border-radius:4px; transition:width 0.3s ease; }
+
+  /* Controls */
+  .controls { display:flex; gap:10px; justify-content:center; margin-bottom:18px; }
+  .btn { padding:9px 22px; border-radius:12px; border:none; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:0.88rem; cursor:pointer; transition:all 0.18s; }
+  .btn-primary { background:linear-gradient(135deg,var(--accent),#e8942a); color:#0f0e17; }
+  .btn-primary:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(247,167,43,0.35); }
+  .btn-ghost { background:var(--card); color:var(--muted); border:1px solid var(--border); }
+  .btn-ghost:hover { color:var(--text); border-color:var(--accent2); }
+
+  /* Keyboard */
+  .key-hint { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 18px; margin-bottom:10px; }
+  .key-hint-title { font-size:0.72rem; color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
+  .key-row { display:flex; justify-content:center; gap:5px; margin-bottom:5px; flex-wrap:wrap; }
+  .key {
+    font-family:'Noto Sans Devanagari',sans-serif;
+    background:var(--key-bg); border:1px solid #3a3860;
+    border-radius:7px; padding:4px 7px; font-size:0.8rem;
+    color:var(--muted); display:flex; flex-direction:column; align-items:center;
+    min-width:36px; transition:all 0.15s; position:relative;
+  }
+  .key .hi { font-size:0.82rem; line-height:1.2; }
+  .key .hi-shift { font-size:0.68rem; color:#6a6888; line-height:1; }
+  .key .eng { font-family:'Baloo 2',sans-serif; font-size:0.58rem; color:#5a5880; margin-top:1px; }
+  .key.home-row { border-color:var(--accent2); }
+  .key.active-correct { background:var(--correct); border-color:var(--correct); }
+  .key.active-correct .hi, .key.active-correct .eng, .key.active-correct .hi-shift { color:#0f0e17; }
+  .key.active-error { background:var(--error); border-color:var(--error); animation:shake 0.25s; }
+  .key.active-error .hi, .key.active-error .eng, .key.active-error .hi-shift { color:#fff; }
+
+  .shift-indicator {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:4px 12px; border-radius:8px; font-size:0.78rem; font-weight:700;
+    margin-bottom:10px;
+    background:var(--card); border:1px solid var(--border); color:var(--muted);
+  }
+  .shift-indicator.on { border-color:var(--error); color:var(--error); background:rgba(247,83,106,0.1); }
+  .shift-indicator .dot { width:7px; height:7px; border-radius:50%; background:var(--muted); }
+  .shift-indicator.on .dot { background:var(--error); }
+
+  .no-words { color:var(--muted); font-size:1rem; text-align:center; padding:20px; }
+  .hint-text { color:var(--muted); font-size:0.78rem; text-align:center; margin-top:8px; }
+
+  .word-done-anim { animation:wordPop 0.35s ease; }
+  @keyframes wordPop { 0%{transform:scale(1);} 50%{transform:scale(1.06);} 100%{transform:scale(1);} }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>हिंदी टाइपिंग ट्रेनर</h1>
+    <p>InScript Keyboard • Backspace to correct • Shift = Error</p>
+  </div>
+
+  <!-- Shift warning -->
+  <div class="shift-warning" id="shiftWarning">⚠ Shift key pressed! Shift changes characters — counted as an error</div>
+
+  <!-- Row tabs -->
+  <div class="tabs" id="rowTabs">
+    <button class="tab active" data-row="home">Home Row</button>
+    <button class="tab" data-row="top">Top Row</button>
+    <button class="tab" data-row="bottom">Bottom Row</button>
+    <button class="tab" data-row="full">All Words</button>
+  </div>
+
+  <!-- Word grid -->
+  <div class="word-panel">
+    <div class="panel-title">✦ Select Words to Practice</div>
+    <div class="word-grid" id="wordGrid"></div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card"><div class="stat-val green" id="correctCount">0</div><div class="stat-label">Correct</div></div>
+    <div class="stat-card"><div class="stat-val red" id="errorCount">0</div><div class="stat-label">Errors</div></div>
+    <div class="stat-card"><div class="stat-val gold" id="wordsDone">0</div><div class="stat-label">Words Done</div></div>
+    <div class="stat-card"><div class="stat-val purple" id="accuracy">—</div><div class="stat-label">Accuracy</div></div>
+  </div>
+
+  <!-- Arena -->
+  <div class="arena" id="arena">
+    <div class="no-words" id="noWordsMsg">Select words above to start practicing ↑</div>
+    <div id="typingArea" style="display:none; width:100%;">
+      <div class="word-meaning" id="wordMeaning"></div>
+      <div class="current-word" id="currentWord"></div>
+      <div class="romanized" id="romanized"></div>
+      <div class="typed-display" id="typedDisplay"></div>
+    </div>
+    <div id="statusBadge" class="status-badge"></div>
+    <div class="backspace-hint" id="backspaceHint">⌫ Backspace to delete</div>
+  </div>
+
+  <!-- Shift indicator + controls -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+    <div class="shift-indicator" id="shiftIndicator">
+      <span class="dot"></span> Shift: OFF
+    </div>
+    <div class="controls" style="margin:0;">
+      <button class="btn btn-primary" id="skipBtn" onclick="nextWord()" style="display:none">Skip →</button>
+      <button class="btn btn-ghost" onclick="resetStats()">Reset</button>
+    </div>
+  </div>
+
+  <!-- Keyboard -->
+  <div class="key-hint">
+    <div class="key-hint-title">⌨ InScript Keyboard — Normal / Shift</div>
+    <div id="keyboardDisplay"></div>
+  </div>
+
+  <div class="hint-text">Type in Hindi InScript • ⌫ Backspace deletes last char • Word locks until fully correct • Shift = ❌ Error</div>
+</div>
+
+<script>
+// ===================== WORD DATABASE =====================
+const wordDB = {
+  home: [
+    {word:'कर',roman:'kar',meaning:'do / tax'},
+    {word:'तर',roman:'tar',meaning:'wet'},
+    {word:'पर',roman:'par',meaning:'on / but'},
+    {word:'तक',roman:'tak',meaning:'until'},
+    {word:'पक',roman:'pak',meaning:'ripe'},
+    {word:'कार',roman:'kaar',meaning:'car'},
+    {word:'तार',roman:'taar',meaning:'wire'},
+    {word:'पार',roman:'paar',meaning:'across'},
+    {word:'चार',roman:'chaar',meaning:'four'},
+    {word:'करे',roman:'kare',meaning:'he/she does'},
+    {word:'परे',roman:'pare',meaning:'away / beyond'},
+    {word:'पुर',roman:'pur',meaning:'town / full'},
+    {word:'पति',roman:'pati',meaning:'husband'},
+    {word:'रति',roman:'rati',meaning:'love / Rati'},
+    {word:'चित',roman:'chit',meaning:'mind / face-up'},
+    {word:'रुक',roman:'ruk',meaning:'stop'},
+    {word:'चुक',roman:'chuk',meaning:'finished'},
+    {word:'तुक',roman:'tuk',meaning:'rhyme'},
+    {word:'पिता',roman:'pita',meaning:'father'},
+    {word:'चिता',roman:'chita',meaning:'funeral pyre'},
+    {word:'पुकार',roman:'pukaar',meaning:'call out'},
+    {word:'करतार',roman:'kartaar',meaning:'God / doer'},
+    {word:'चरित',roman:'charit',meaning:'character'},
+    {word:'तिर',roman:'tir',meaning:'arrow'},
+    {word:'तेर',roman:'ter',meaning:'your (base)'},
+    {word:'केर',roman:'ker',meaning:'of (dialect)'},
+    {word:'पुत',roman:'put',meaning:'son (base)'},
+    {word:'कति',roman:'kati',meaning:'how much'},
+  ],
+  top: [
+    {word:'दिन',roman:'din',meaning:'day'},
+    {word:'मन',roman:'man',meaning:'mind / heart'},
+    {word:'धन',roman:'dhan',meaning:'wealth'},
+    {word:'वन',roman:'van',meaning:'forest'},
+    {word:'नाम',roman:'naam',meaning:'name'},
+    {word:'काम',roman:'kaam',meaning:'work'},
+    {word:'राम',roman:'raam',meaning:'Ram (name)'},
+    {word:'दाम',roman:'daam',meaning:'price'},
+    {word:'मान',roman:'maan',meaning:'respect'},
+    {word:'दान',roman:'daan',meaning:'donation'},
+    {word:'धाम',roman:'dhaam',meaning:'abode'},
+    {word:'दिल',roman:'dil',meaning:'heart'},
+    {word:'नील',roman:'neel',meaning:'blue / indigo'},
+    {word:'माल',roman:'maal',meaning:'goods'},
+    {word:'नाल',roman:'naal',meaning:'pipe / cord'},
+    {word:'धूल',roman:'dhool',meaning:'dust'},
+    {word:'मूल',roman:'mool',meaning:'root / original'},
+  ],
+  bottom: [
+    {word:'बाल',roman:'baal',meaning:'hair / child'},
+    {word:'भाल',roman:'bhaal',meaning:'forehead'},
+    {word:'साल',roman:'saal',meaning:'year'},
+    {word:'हाल',roman:'haal',meaning:'condition'},
+    {word:'खाल',roman:'khaal',meaning:'skin / leather'},
+    {word:'बात',roman:'baat',meaning:'talk / matter'},
+    {word:'भात',roman:'bhaat',meaning:'cooked rice'},
+    {word:'सात',roman:'saat',meaning:'seven'},
+    {word:'बाज',roman:'baaj',meaning:'hawk / player'},
+    {word:'साज',roman:'saaj',meaning:'instrument'},
+    {word:'बाण',roman:'baan',meaning:'arrow'},
+    {word:'बिल',roman:'bil',meaning:'bill / burrow'},
+    {word:'खिल',roman:'khil',meaning:'bloom'},
+    {word:'सिल',roman:'sil',meaning:'stone slab'},
+    {word:'सुख',roman:'sukh',meaning:'happiness'},
+  ],
+  full: []
+};
+wordDB.full = [...wordDB.home, ...wordDB.top, ...wordDB.bottom]
+  .filter((w,i,arr) => arr.findIndex(x=>x.word===w.word)===i);
+
+// ===================== InScript Map (Normal + Shift) =====================
+// Each entry: [normalChar, shiftChar]
+const inscript = {
+  'q':['ौ','ॊ'], 'w':['ै','ॅ'], 'e':['ा','ऑ'], 'r':['ी','ऋ'], 't':['ू','ॄ'],
+  'y':['ब','भ'], 'u':['ह','ङ'], 'i':['ग','घ'], 'o':['द','ध'], 'p':['ज','झ'],
+  'a':['ो','ऒ'], 's':['े','ॆ'], 'd':['्',''], 'f':['ि','ॉ'], 'g':['ु','ऊ'],
+  'h':['प','फ'], 'j':['र','ड़'], 'k':['क','ख'], 'l':['त','थ'], ';':['च','छ'],
+  'z':['ॆ','ऍ'], 'x':['ं','ः'], 'c':['म','ण'], 'v':['न','ञ'], 'b':['व','ऋ'],
+  'n':['ल','ळ'], 'm':['स','श'], ',':['ष','।'], '.':['।','.']
+};
+
+// Build reverse lookup: devanagari char → key info
+const charToKey = {};
+Object.entries(inscript).forEach(([key, [norm, shift]]) => {
+  if (norm) charToKey[norm] = {key, shift: false};
+  if (shift) charToKey[shift] = {key, shift: true};
+});
+
+// Keyboard rows for display
+const keyRows = {
+  top:    ['q','w','e','r','t','y','u','i','o','p'],
+  home:   ['a','s','d','f','g','h','j','k','l',';'],
+  bottom: ['z','x','c','v','b','n','m',',','.']
+};
+
+// ===================== STATE =====================
+let selectedWords = [], activeWords = [], currentWordObj = null;
+let currentIndex = 0;
+let typedStates = []; // array of 'correct'|'error'|null per char position
+let correctTotal = 0, errorTotal = 0, wordsDone = 0;
+let currentRow = 'home';
+let shiftDown = false;
+let statusTimer = null;
+let shiftWarningTimer = null;
+
+// ===================== INIT =====================
+function init() {
+  renderWordGrid();
+  renderKeyboard();
+  document.addEventListener('keydown', handleKeyDown);
+  document.addEventListener('keyup', handleKeyUp);
+}
+
+// ===================== WORD GRID =====================
+function renderWordGrid() {
+  const grid = document.getElementById('wordGrid');
+  const words = wordDB[currentRow];
+  grid.innerHTML = '';
+  const allChip = document.createElement('div');
+  allChip.className = 'word-chip select-all' + (selectedWords.length===words.length?' selected':'');
+  allChip.textContent = selectedWords.length===words.length ? '✓ All Selected' : '+ Select All';
+  allChip.onclick = () => toggleAll(words);
+  grid.appendChild(allChip);
+  words.forEach(w => {
+    const chip = document.createElement('div');
+    chip.className = 'word-chip' + (selectedWords.find(s=>s.word===w.word)?' selected':'');
+    chip.textContent = w.word;
+    chip.title = w.meaning;
+    chip.onclick = () => toggleWord(w);
+    grid.appendChild(chip);
+  });
+}
+
+function toggleWord(w) {
+  const idx = selectedWords.findIndex(s=>s.word===w.word);
+  if (idx>=0) selectedWords.splice(idx,1); else selectedWords.push(w);
+  renderWordGrid(); startPractice();
+}
+
+function toggleAll(words) {
+  selectedWords = selectedWords.length===words.length ? [] : [...words];
+  renderWordGrid(); startPractice();
+}
+
+// ===================== START PRACTICE =====================
+function startPractice() {
+  if (selectedWords.length===0) {
+    document.getElementById('noWordsMsg').style.display='block';
+    document.getElementById('typingArea').style.display='none';
+    document.getElementById('skipBtn').style.display='none';
+    currentWordObj=null; return;
+  }
+  document.getElementById('noWordsMsg').style.display='none';
+  document.getElementById('typingArea').style.display='block';
+  document.getElementById('skipBtn').style.display='inline-block';
+  activeWords = shuffle([...selectedWords]);
+  currentIndex=0; loadWord();
+}
+
+function shuffle(arr) {
+  for (let i=arr.length-1;i>0;i--) {
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function loadWord() {
+  if (activeWords.length===0) activeWords=shuffle([...selectedWords]);
+  currentWordObj = activeWords[currentIndex % activeWords.length];
+  currentIndex++;
+  typedStates = [];
+  hideStatus();
+  document.getElementById('arena').classList.remove('has-error');
+  document.getElementById('backspaceHint').classList.remove('show');
+  document.getElementById('typedDisplay').textContent = '';
+  renderWord();
+  updateProgress();
+}
+
+function nextWord() {
+  if (!currentWordObj) return;
+  document.getElementById('typingArea').classList.add('word-done-anim');
+  setTimeout(()=>document.getElementById('typingArea').classList.remove('word-done-anim'),350);
+  wordsDone++;
+  document.getElementById('wordsDone').textContent = wordsDone;
+  updateAccuracy();
+  loadWord();
+}
+
+// ===================== RENDER WORD =====================
+function renderWord() {
+  if (!currentWordObj) return;
+  const chars = [...currentWordObj.word];
+  document.getElementById('currentWord').innerHTML = chars.map((c,i)=>{
+    let cls = i===0 ? 'char current' : 'char pending';
+    return `<span class="${cls}" data-i="${i}">${c}</span>`;
+  }).join('');
+  document.getElementById('wordMeaning').textContent = currentWordObj.meaning;
+  document.getElementById('romanized').textContent = currentWordObj.roman;
+}
+
+function updateCharDisplay() {
+  if (!currentWordObj) return;
+  const chars = [...currentWordObj.word];
+  const pos = typedStates.length;
+  document.querySelectorAll('#currentWord .char').forEach((span,i) => {
+    if (i < pos) {
+      span.className = 'char ' + (typedStates[i]==='correct' ? 'correct' : 'error');
+    } else if (i === pos) {
+      span.className = 'char current';
+    } else {
+      span.className = 'char pending';
+    }
+  });
+  // Show typed count in typed display
+  const correct = typedStates.filter(s=>s==='correct').length;
+  const total = chars.length;
+  document.getElementById('typedDisplay').textContent = pos > 0 ? `${pos}/${total} typed` : '';
+}
+
+// ===================== KEY HANDLERS =====================
+function handleKeyDown(e) {
+  // Track shift state
+  if (e.key === 'Shift') {
+    shiftDown = true;
+    updateShiftIndicator(true);
+    return; // don't process shift alone yet, wait to see if another key is pressed
+  }
+
+  if (!currentWordObj) return;
+
+  // Backspace
+  if (e.key === 'Backspace') {
+    e.preventDefault();
+    if (typedStates.length > 0) {
+      typedStates.pop();
+      updateCharDisplay();
+      hideStatus();
+      // Remove error state if no errors remain
+      const hasError = typedStates.some(s=>s==='error');
+      if (!hasError) {
+        document.getElementById('arena').classList.remove('has-error');
+        document.getElementById('backspaceHint').classList.remove('show');
+      }
+    }
+    return;
+  }
+
+  // Ignore modifier combos
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  // Ignore non-character keys
+  if (e.key.length > 1) return;
+
+  const pos = typedStates.length;
+  const chars = [...currentWordObj.word];
+  if (pos >= chars.length) return;
+
+  e.preventDefault();
+
+  const expectedChar = chars[pos];
+  const keyLower = e.key.toLowerCase();
+
+  // If shift was held, this is automatically an error
+  if (shiftDown) {
+    registerError(pos, keyLower, expectedChar, true);
+    return;
+  }
+
+  // Get what this key produces in normal (no-shift) InScript
+  const produced = inscript[keyLower] ? inscript[keyLower][0] : e.key;
+  const isCorrect = produced === expectedChar;
+
+  if (isCorrect) {
+    registerCorrect(pos, keyLower);
+  } else {
+    registerError(pos, keyLower, expectedChar, false);
+  }
+}
+
+function handleKeyUp(e) {
+  if (e.key === 'Shift') {
+    shiftDown = false;
+    updateShiftIndicator(false);
+  }
+}
+
+function registerCorrect(pos, keyLower) {
+  typedStates.push('correct');
+  correctTotal++;
+  document.getElementById('correctCount').textContent = correctTotal;
+  flashKey(keyLower, 'correct');
+  showStatus('✓ Correct!', 'correct');
+  updateCharDisplay();
+  updateAccuracy();
+
+  // Check if word complete and all correct
+  const chars = [...currentWordObj.word];
+  if (typedStates.length >= chars.length) {
+    const allCorrect = typedStates.every(s=>s==='correct');
+    if (allCorrect) {
+      setTimeout(()=>nextWord(), 450);
+    }
+    // If not all correct, user must use backspace to fix
+  }
+}
+
+function registerError(pos, keyLower, expectedChar, isShiftError) {
+  typedStates.push('error');
+  errorTotal++;
+  document.getElementById('errorCount').textContent = errorTotal;
+  flashKey(keyLower, 'error');
+  document.getElementById('arena').classList.add('has-error');
+  document.getElementById('backspaceHint').classList.add('show');
+
+  if (isShiftError) {
+    showStatus('⚠ Shift Error!', 'error');
+    // Show shift warning banner
+    const banner = document.getElementById('shiftWarning');
+    banner.classList.add('show');
+    if (shiftWarningTimer) clearTimeout(shiftWarningTimer);
+    shiftWarningTimer = setTimeout(()=>banner.classList.remove('show'), 2500);
+  } else {
+    showStatus('✗ Wrong key!', 'error');
+  }
+
+  updateCharDisplay();
+  updateAccuracy();
+  // Do NOT auto-advance — user must backspace and correct
+}
+
+// ===================== SHIFT INDICATOR =====================
+function updateShiftIndicator(on) {
+  const el = document.getElementById('shiftIndicator');
+  if (on) {
+    el.className = 'shift-indicator on';
+    el.innerHTML = '<span class="dot"></span> Shift: ON ⚠';
+  } else {
+    el.className = 'shift-indicator';
+    el.innerHTML = '<span class="dot"></span> Shift: OFF';
+  }
+}
+
+// ===================== KEY FLASH =====================
+function flashKey(key, type) {
+  const k = key === ';' ? ';' : key.toLowerCase();
+  document.querySelectorAll('.key').forEach(el => {
+    el.classList.remove('active-correct','active-error');
+    if (el.dataset.key === k) {
+      el.classList.add(type==='correct' ? 'active-correct' : 'active-error');
+    }
+  });
+  setTimeout(()=>{
+    document.querySelectorAll('.key').forEach(el=>el.classList.remove('active-correct','active-error'));
+  }, 350);
+}
+
+// ===================== KEYBOARD DISPLAY =====================
+function renderKeyboard() {
+  const div = document.getElementById('keyboardDisplay');
+  div.innerHTML = '';
+  ['top','home','bottom'].forEach(rowName => {
+    const row = document.createElement('div');
+    row.className = 'key-row';
+    keyRows[rowName].forEach(k => {
+      const [norm, shift] = inscript[k] || [k,''];
+      const keyEl = document.createElement('div');
+      keyEl.className = 'key' + (rowName==='home'?' home-row':'');
+      keyEl.dataset.key = k;
+      keyEl.innerHTML = `
+        <span class="hi-shift">${shift||''}</span>
+        <span class="hi">${norm||''}</span>
+        <span class="eng">${k.toUpperCase()}</span>`;
+      row.appendChild(keyEl);
+    });
+    div.appendChild(row);
+  });
+}
+
+// ===================== STATUS =====================
+function showStatus(msg, type) {
+  const el = document.getElementById('statusBadge');
+  el.textContent = msg;
+  el.className = 'status-badge ' + type;
+  if (statusTimer) clearTimeout(statusTimer);
+  statusTimer = setTimeout(()=>hideStatus(), 900);
+}
+function hideStatus() {
+  const el = document.getElementById('statusBadge');
+  el.className = 'status-badge';
+  el.style.display = 'none';
+}
+
+// ===================== STATS =====================
+function updateAccuracy() {
+  const total = correctTotal + errorTotal;
+  if (total===0) { document.getElementById('accuracy').textContent='—'; return; }
+  document.getElementById('accuracy').textContent = Math.round((correctTotal/total)*100)+'%';
+}
+
+function updateProgress() {
+  const pct = selectedWords.length>0 ? Math.min((wordsDone/(selectedWords.length*2))*100,100) : 0;
+  document.getElementById('progressFill').style.width = pct+'%';
+}
+
+function resetStats() {
+  correctTotal=0; errorTotal=0; wordsDone=0;
+  ['correctCount','errorCount','wordsDone'].forEach(id=>document.getElementById(id).textContent='0');
+  document.getElementById('accuracy').textContent='—';
+  document.getElementById('progressFill').style.width='0%';
+  if (currentWordObj) loadWord();
+}
+
+// ===================== ROW TABS =====================
+document.getElementById('rowTabs').addEventListener('click', e => {
+  const tab = e.target.closest('.tab');
+  if (!tab) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');
+  currentRow = tab.dataset.row;
+  selectedWords = [];
+  renderWordGrid();
+  startPractice();
+});
+
+init();
+</script>
+</body>
+</html>
