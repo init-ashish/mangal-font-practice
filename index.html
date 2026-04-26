@@ -564,6 +564,9 @@ function init(){
   renderKb(); renderFilters(); renderGrid();
   document.addEventListener('keydown',onKD);
   document.addEventListener('keyup',onKU);
+  // Reset shift state if user alt-tabs, switches layouts, or OS swallows the keyup
+  window.addEventListener('blur',()=>{if(shiftDown){shiftDown=false;setShiftUI(false);}});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden&&shiftDown){shiftDown=false;setShiftUI(false);}});
   document.getElementById('rowBtns').addEventListener('click',onRowClick);
 }
 
@@ -695,7 +698,16 @@ function refreshChars(){
 // KEY HANDLERS
 // ══════════════════════════════════════════════════════
 function onKD(e){
-  if(e.key==='Shift'){shiftDown=true;setShiftUI(true);return;}
+  // Always sync shiftDown from the event's shiftKey — this is the source of truth.
+  // Relying only on keydown/keyup tracking breaks when the OS swallows the keyup
+  // (e.g. switching keyboard layouts while Shift is held).
+  const isShift = e.shiftKey;
+  if(e.key==='Shift'){
+    shiftDown=true; setShiftUI(true); return;
+  }
+  // Sync state in case a keyup was missed (layout switch, alt-tab, etc.)
+  if(shiftDown!==isShift){ shiftDown=isShift; setShiftUI(isShift); }
+
   if(!curObj)return;
   if(e.key==='Backspace'){
     e.preventDefault();
@@ -714,19 +726,39 @@ function onKD(e){
   if(pos>=chars.length)return;
   e.preventDefault();
   const expected=chars[pos];
-  const k=e.key.toLowerCase();
-  // Get what this key produces: normal or shift
+  // Resolve the physical key code reliably:
+  // e.code gives the physical key regardless of shift/layout (e.g. "Semicolon", "Quote")
+  // We map e.code → base key char for our INS lookup table
+  const CODE_TO_KEY = {
+    'Backquote':'`','Minus':'-','Equal':'=',
+    'BracketLeft':'[','BracketRight':']','Backslash':'\\',
+    'Semicolon':';','Quote':"'",'Comma':',','Period':'.','Slash':'/',
+  };
+  // For letter/digit keys, e.code is like "KeyA" or "Digit1"
+  let k;
+  if(e.code && CODE_TO_KEY[e.code]!==undefined){
+    k = CODE_TO_KEY[e.code];
+  } else if(e.code && e.code.startsWith('Key')){
+    k = e.code.slice(3).toLowerCase(); // "KeyA" → "a"
+  } else if(e.code && e.code.startsWith('Digit')){
+    k = e.code.slice(5); // "Digit1" → "1"
+  } else {
+    k = e.key.toLowerCase();
+  }
+  // Use e.shiftKey directly — the most reliable signal
   const pair=INS[k]||[e.key,''];
-  const produced=shiftDown ? (pair[1]||'') : pair[0];
+  const produced=isShift ? (pair[1]||'') : pair[0];
   if(produced===expected){
     markOk(pos,k);
   } else {
-    // Shift was held but produced wrong char — error
-    // Or no shift but wrong char — error
-    markErr(pos,k, shiftDown && pair[0]===expected);
+    markErr(pos,k, isShift && pair[0]===expected);
   }
 }
-function onKU(e){if(e.key==='Shift'){shiftDown=false;setShiftUI(false);}}
+function onKU(e){
+  if(e.key==='Shift'){shiftDown=false;setShiftUI(false);}
+  // Also sync on any keyup in case state drifted
+  else if(shiftDown && !e.shiftKey){shiftDown=false;setShiftUI(false);}
+}
 function markOk(pos,k){
   typed.push('ok');SC++;document.getElementById('sc').textContent=SC;
   flashKey(k,'ok');showSt('✓ सही!','ok');
