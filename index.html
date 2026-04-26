@@ -3,724 +3,831 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>मंगल टाइपिंग ट्रेनर — InScript</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
+:root {
+  --ink:#0d0c14; --ink2:#161422; --ink3:#1f1d2e; --ink4:#2a2840; --ink5:#363454;
+  --saffron:#ff9933; --gold:#f5c842; --lotus:#e8547a; --teal:#2dd4bf;
+  --ok:#22c55e; --err:#ef4444; --txt:#f8f6ff; --muted:#8b87b0; --dim:#4a4770; --border:#252340;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Syne',sans-serif;background:var(--ink);color:var(--txt);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 80% 50% at 10% 0%,rgba(255,153,51,.07) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 60% at 90% 100%,rgba(45,212,191,.05) 0%,transparent 60%);}
+.app{position:relative;z-index:1;display:grid;grid-template-columns:270px 1fr;min-height:100vh;}
 
-  :root {
-    --bg: #0f0e17;
-    --surface: #1a1927;
-    --card: #23213a;
-    --border: #2e2c4a;
-    --accent: #f7a72b;
-    --accent2: #7c6af7;
-    --correct: #3ecf8e;
-    --error: #f7536a;
-    --text: #fffffe;
-    --muted: #a7a3c2;
-    --key-bg: #2e2c4a;
-  }
+/* SIDEBAR */
+.sidebar{background:var(--ink2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0;overflow-y:auto;position:sticky;top:0;height:100vh;}
+.sidebar-head{padding:22px 18px 16px;border-bottom:1px solid var(--border);}
+.logo{font-size:1.3rem;font-weight:800;letter-spacing:-.5px;background:linear-gradient(120deg,var(--saffron),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
+.logo-sub{font-size:.68rem;color:var(--muted);margin-top:3px;font-weight:400;letter-spacing:.5px;}
+.section-label{font-size:.62rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:1.5px;padding:14px 18px 6px;}
+.row-btns{padding:0 10px 8px;display:flex;flex-direction:column;gap:3px;}
+.row-btn{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;border:1.5px solid transparent;background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .18s;text-align:left;width:100%;}
+.row-btn .ricon{font-size:.9rem;width:20px;text-align:center;}
+.row-btn .rbadge{margin-left:auto;font-size:.6rem;background:var(--ink4);color:var(--dim);padding:1px 6px;border-radius:8px;}
+.row-btn:hover{background:var(--ink3);color:var(--txt);border-color:var(--ink5);}
+.row-btn.active{background:linear-gradient(135deg,rgba(255,153,51,.12),rgba(245,200,66,.08));border-color:rgba(255,153,51,.4);color:var(--saffron);}
+.row-btn.active .rbadge{background:rgba(255,153,51,.2);color:var(--saffron);}
+.row-btn .rchars{font-family:'Noto Sans Devanagari',sans-serif;font-size:.65rem;color:var(--dim);display:block;margin-top:1px;line-height:1.2;}
+.sidebar-stats{padding:12px 18px;border-top:1px solid var(--border);margin-top:auto;}
+.sstat{display:flex;justify-content:space-between;align-items:center;padding:5px 0;}
+.sstat-label{font-size:.7rem;color:var(--muted);}
+.sstat-val{font-size:1rem;font-weight:800;}
+.reset-btn{width:100%;margin-top:8px;padding:8px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:.75rem;font-weight:600;cursor:pointer;transition:all .18s;}
+.reset-btn:hover{border-color:var(--lotus);color:var(--lotus);}
 
-  * { margin:0; padding:0; box-sizing:border-box; }
+/* MAIN */
+.main{display:flex;flex-direction:column;padding:20px;gap:14px;overflow-y:auto;}
+.topbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.shift-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:.74rem;font-weight:700;background:var(--ink3);border:1px solid var(--border);color:var(--muted);transition:all .25s;}
+.shift-pill.on{background:rgba(45,212,191,.12);border-color:rgba(45,212,191,.5);color:var(--teal);}
+.spill-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);transition:all .25s;}
+.shift-pill.on .spill-dot{background:var(--teal);box-shadow:0 0 6px var(--teal);}
+.shift-ban{flex:1;padding:6px 12px;border-radius:9px;font-size:.76rem;font-weight:700;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.4);color:var(--err);display:none;animation:slideIn .2s;}
+.shift-ban.show{display:block;}
+@keyframes slideIn{from{opacity:0;transform:translateX(-6px);}to{opacity:1;transform:translateX(0);}}
 
-  body {
-    font-family: 'Baloo 2', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-    overflow-x: hidden;
-  }
+/* POOL */
+.pool-card{background:var(--ink2);border:1px solid var(--border);border-radius:14px;padding:14px;}
+.pool-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.pool-title{font-size:.7rem;font-weight:700;color:var(--saffron);text-transform:uppercase;letter-spacing:1.2px;}
+.pool-filters{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto;}
+.filter-btn{font-size:.65rem;padding:2px 9px;border-radius:7px;border:1px solid var(--border);background:var(--ink3);color:var(--muted);cursor:pointer;transition:all .18s;font-family:'Syne',sans-serif;font-weight:600;}
+.filter-btn:hover,.filter-btn.active{border-color:var(--teal);color:var(--teal);}
+.pool-count{font-size:.66rem;color:var(--muted);}
+.chips{display:flex;flex-wrap:wrap;gap:5px;max-height:130px;overflow-y:auto;}
+.chips::-webkit-scrollbar{width:3px;}
+.chips::-webkit-scrollbar-thumb{background:var(--ink5);border-radius:2px;}
+.chip{font-family:'Noto Sans Devanagari',sans-serif;font-size:.9rem;padding:3px 11px;border-radius:14px;border:1.5px solid var(--border);background:var(--ink3);color:var(--muted);cursor:pointer;transition:all .16s;user-select:none;white-space:nowrap;}
+.chip:hover{border-color:var(--teal);color:var(--txt);}
+.chip.sel{border-color:var(--teal);color:var(--txt);background:rgba(45,212,191,.08);}
 
-  body::before {
-    content: '';
-    position: fixed;
-    top: -50%; left: -50%;
-    width: 200%; height: 200%;
-    background: radial-gradient(ellipse at 30% 20%, rgba(124,106,247,0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 70% 80%, rgba(247,167,43,0.06) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-  }
+/* PROGRESS */
+.pbar-wrap{height:3px;background:var(--ink4);border-radius:3px;overflow:hidden;}
+.pbar-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--saffron));border-radius:3px;transition:width .4s;}
 
-  .container { width:100%; max-width:880px; position:relative; z-index:1; }
+/* ARENA */
+.arena{background:var(--ink2);border:1.5px solid var(--border);border-radius:18px;padding:28px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:195px;text-align:center;position:relative;transition:border-color .2s,box-shadow .2s;}
+.arena.err-mode{border-color:rgba(239,68,68,.5);box-shadow:0 0 28px rgba(239,68,68,.07);}
+.arena.ok-mode{border-color:rgba(34,197,94,.4);box-shadow:0 0 28px rgba(34,197,94,.06);}
+.a-empty{color:var(--muted);font-size:.95rem;}
+.a-meaning{font-size:.8rem;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap;}
+.a-tag{background:rgba(255,153,51,.1);border:1px solid rgba(255,153,51,.25);color:var(--saffron);font-size:.66rem;padding:2px 7px;border-radius:7px;font-weight:700;}
+.a-word{font-family:'Noto Sans Devanagari',sans-serif;font-size:3.2rem;font-weight:700;letter-spacing:8px;margin-bottom:10px;display:flex;gap:0;justify-content:center;flex-wrap:wrap;min-height:62px;align-items:center;line-height:1.25;}
+.ch{display:inline-block;transition:all .1s;border-bottom:3px solid transparent;padding-bottom:1px;}
+.ch.pend{color:var(--dim);}
+.ch.ok{color:var(--ok);border-bottom-color:rgba(34,197,94,.6);}
+.ch.bad{color:var(--err);border-bottom-color:rgba(239,68,68,.6);animation:shk .2s;}
+.ch.cur{color:var(--txt);border-bottom-color:var(--saffron);animation:blink 1.1s infinite;}
+@keyframes blink{0%,100%{border-bottom-color:var(--saffron);}50%{border-bottom-color:transparent;}}
+@keyframes shk{0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}75%{transform:translateX(5px);}}
+.a-roman{color:var(--teal);font-size:.78rem;font-style:italic;opacity:.8;letter-spacing:.5px;}
+.a-typed{margin-top:6px;font-size:.7rem;color:var(--muted);}
+.a-badge{position:absolute;top:12px;right:14px;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;display:none;}
+.a-badge.ok{background:rgba(34,197,94,.15);color:var(--ok);display:block;}
+.a-badge.err{background:rgba(239,68,68,.15);color:var(--err);display:block;}
+.a-bsp{position:absolute;bottom:12px;right:14px;font-size:.68rem;color:var(--muted);background:var(--ink3);border:1px solid var(--border);border-radius:6px;padding:2px 8px;display:none;}
+.a-bsp.show{display:block;}
+.skip-btn{position:absolute;bottom:12px;left:14px;font-size:.68rem;padding:3px 10px;border-radius:7px;border:1px solid var(--border);background:var(--ink3);color:var(--muted);cursor:pointer;transition:all .16s;font-family:'Syne',sans-serif;font-weight:600;display:none;}
+.skip-btn:hover{border-color:var(--saffron);color:var(--saffron);}
+.skip-btn.show{display:block;}
 
-  .header { text-align:center; margin-bottom:24px; }
-  .header h1 {
-    font-size:2rem; font-weight:800;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-  }
-  .header p { color:var(--muted); font-size:0.85rem; margin-top:4px; }
+/* KEYBOARD */
+.kb-card{background:var(--ink2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;}
+.kb-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.kb-title{font-size:.7rem;font-weight:700;color:var(--saffron);text-transform:uppercase;letter-spacing:1.2px;}
+.kb-mode{font-size:.7rem;color:var(--muted);margin-left:auto;transition:color .2s;}
+.kb-mode.shift-on{color:var(--teal);font-weight:700;}
+.krows{display:flex;flex-direction:column;gap:4px;}
+.krow{display:flex;justify-content:center;gap:3px;flex-wrap:wrap;}
+.key{font-family:'Noto Sans Devanagari',sans-serif;border-radius:7px;min-width:46px;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:default;transition:all .15s;border:1px solid var(--ink5);background:var(--ink3);}
+.key.home-row{border-color:rgba(255,153,51,.45);background:rgba(255,153,51,.04);}
+.key.top-row{border-color:rgba(45,212,191,.3);background:rgba(45,212,191,.03);}
+.key.bot-row{border-color:rgba(232,84,122,.3);background:rgba(232,84,122,.03);}
+.key .ksh{font-size:.68rem;color:var(--dim);line-height:1;min-height:13px;transition:all .25s;}
+.key .knm{font-size:.84rem;color:var(--txt);line-height:1;transition:all .25s;}
+.key .klt{font-family:'Syne',sans-serif;font-size:.5rem;color:var(--dim);margin-top:2px;}
+.kb-shift .key .ksh{color:var(--txt);font-size:.84rem;}
+.kb-shift .key .knm{color:var(--dim);font-size:.68rem;}
+.key.flash-ok{background:rgba(34,197,94,.2)!important;border-color:var(--ok)!important;}
+.key.flash-ok .ksh,.key.flash-ok .knm,.key.flash-ok .klt{color:var(--ok)!important;}
+.key.flash-err{background:rgba(239,68,68,.2)!important;border-color:var(--err)!important;animation:shk .2s;}
+.key.flash-err .ksh,.key.flash-err .knm,.key.flash-err .klt{color:var(--err)!important;}
+.key.space{min-width:100px;}
+.key.wide{min-width:62px;}
 
-  /* Shift warning banner */
-  .shift-warning {
-    display: none;
-    background: rgba(247,83,106,0.15);
-    border: 1.5px solid var(--error);
-    border-radius: 10px;
-    padding: 8px 16px;
-    color: var(--error);
-    font-size: 0.85rem;
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 14px;
-    animation: flashBanner 0.3s ease;
-  }
-  .shift-warning.show { display: block; }
-  @keyframes flashBanner {
-    0% { opacity:0; transform:translateY(-6px); }
-    100% { opacity:1; transform:translateY(0); }
-  }
+/* HIGHLIGHT active row on keyboard */
+.kb-show-home .key:not(.home-row){opacity:.35;}
+.kb-show-top .key:not(.top-row){opacity:.35;}
+.kb-show-bot .key:not(.bot-row){opacity:.35;}
 
-  /* Tabs */
-  .tabs {
-    display:flex; gap:8px; margin-bottom:18px;
-    background:var(--surface); border-radius:14px; padding:6px;
-    border:1px solid var(--border);
-  }
-  .tab {
-    flex:1; padding:9px 6px; border-radius:10px; border:none;
-    background:transparent; color:var(--muted);
-    font-family:'Baloo 2',sans-serif; font-size:0.8rem; font-weight:600;
-    cursor:pointer; transition:all 0.2s; text-align:center;
-  }
-  .tab.active { background:var(--card); color:var(--accent); box-shadow:0 2px 12px rgba(247,167,43,0.15); }
-  .tab:hover:not(.active) { color:var(--text); }
-
-  /* Word panel */
-  .word-panel {
-    background:var(--surface); border:1px solid var(--border);
-    border-radius:16px; padding:16px; margin-bottom:18px;
-  }
-  .panel-title { font-size:0.75rem; color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
-  .word-grid { display:flex; flex-wrap:wrap; gap:7px; }
-  .word-chip {
-    font-family:'Noto Sans Devanagari',sans-serif; font-size:1rem;
-    padding:5px 13px; border-radius:20px; border:1.5px solid var(--border);
-    background:var(--card); color:var(--muted); cursor:pointer; transition:all 0.18s; user-select:none;
-  }
-  .word-chip.selected { border-color:var(--accent2); color:var(--text); background:rgba(124,106,247,0.15); }
-  .word-chip:hover { border-color:var(--accent2); color:var(--text); }
-  .word-chip.select-all { border-color:var(--accent); color:var(--accent); font-family:'Baloo 2',sans-serif; font-size:0.8rem; }
-  .word-chip.select-all.selected { background:rgba(247,167,43,0.15); }
-
-  /* Stats */
-  .stats { display:flex; gap:10px; margin-bottom:18px; }
-  .stat-card { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 8px; text-align:center; }
-  .stat-val { font-size:1.7rem; font-weight:800; line-height:1; }
-  .stat-val.green { color:var(--correct); }
-  .stat-val.red { color:var(--error); }
-  .stat-val.gold { color:var(--accent); }
-  .stat-val.purple { color:var(--accent2); }
-  .stat-label { font-size:0.68rem; color:var(--muted); margin-top:3px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
-
-  /* Arena */
-  .arena {
-    background:var(--surface); border:1px solid var(--border);
-    border-radius:20px; padding:28px 24px; margin-bottom:18px;
-    text-align:center; min-height:180px;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    position:relative;
-  }
-  .arena.has-error { border-color: rgba(247,83,106,0.4); }
-
-  .word-meaning { color:var(--muted); font-size:0.88rem; margin-bottom:10px; }
-  .current-word {
-    font-family:'Noto Sans Devanagari',sans-serif;
-    font-size:3rem; font-weight:700; letter-spacing:8px;
-    margin-bottom:12px; display:flex; gap:2px;
-    justify-content:center; flex-wrap:wrap; min-height:60px;
-    align-items:center;
-  }
-
-  .char { display:inline-block; transition:color 0.1s, transform 0.1s; border-bottom:3px solid transparent; padding-bottom:2px; }
-  .char.pending { color:var(--muted); }
-  .char.correct { color:var(--correct); border-bottom-color:var(--correct); }
-  .char.error { color:var(--error); border-bottom-color:var(--error); animation:shake 0.25s; }
-  .char.current { color:var(--text); border-bottom-color:var(--accent); animation:blink-cur 1s infinite; }
-
-  @keyframes blink-cur { 0%,100%{border-bottom-color:var(--accent);} 50%{border-bottom-color:transparent;} }
-  @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
-
-  .romanized { color:var(--accent2); font-size:0.83rem; font-style:italic; opacity:0.8; }
-
-  /* Input display (shows typed chars) */
-  .typed-display {
-    margin-top:10px;
-    font-family:'Noto Sans Devanagari',sans-serif;
-    font-size:1.1rem;
-    color:var(--muted);
-    min-height:28px;
-    letter-spacing:3px;
-  }
-
-  /* Status badge */
-  .status-badge {
-    position:absolute; top:12px; right:16px;
-    font-size:0.76rem; font-weight:700;
-    padding:4px 10px; border-radius:20px; display:none;
-  }
-  .status-badge.correct { background:rgba(62,207,142,0.15); color:var(--correct); display:block; }
-  .status-badge.error { background:rgba(247,83,106,0.15); color:var(--error); display:block; }
-
-  /* Backspace hint */
-  .backspace-hint {
-    position:absolute; bottom:12px; right:16px;
-    font-size:0.72rem; color:var(--muted);
-    background:var(--card); border:1px solid var(--border);
-    border-radius:8px; padding:3px 9px;
-    display:none;
-  }
-  .backspace-hint.show { display:block; }
-
-  /* Progress */
-  .progress-bar { width:100%; height:4px; background:var(--border); border-radius:4px; margin-bottom:18px; overflow:hidden; }
-  .progress-fill { height:100%; background:linear-gradient(90deg,var(--accent2),var(--accent)); border-radius:4px; transition:width 0.3s ease; }
-
-  /* Controls */
-  .controls { display:flex; gap:10px; justify-content:center; margin-bottom:18px; }
-  .btn { padding:9px 22px; border-radius:12px; border:none; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:0.88rem; cursor:pointer; transition:all 0.18s; }
-  .btn-primary { background:linear-gradient(135deg,var(--accent),#e8942a); color:#0f0e17; }
-  .btn-primary:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(247,167,43,0.35); }
-  .btn-ghost { background:var(--card); color:var(--muted); border:1px solid var(--border); }
-  .btn-ghost:hover { color:var(--text); border-color:var(--accent2); }
-
-  /* Keyboard */
-  .key-hint { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 18px; margin-bottom:10px; }
-  .key-hint-title { font-size:0.72rem; color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
-  .key-row { display:flex; justify-content:center; gap:5px; margin-bottom:5px; flex-wrap:wrap; }
-  .key {
-    font-family:'Noto Sans Devanagari',sans-serif;
-    background:var(--key-bg); border:1px solid #3a3860;
-    border-radius:7px; padding:4px 7px; font-size:0.8rem;
-    color:var(--muted); display:flex; flex-direction:column; align-items:center;
-    min-width:36px; transition:all 0.15s; position:relative;
-  }
-  .key .hi { font-size:0.82rem; line-height:1.2; }
-  .key .hi-shift { font-size:0.68rem; color:#6a6888; line-height:1; }
-  .key .eng { font-family:'Baloo 2',sans-serif; font-size:0.58rem; color:#5a5880; margin-top:1px; }
-  .key.home-row { border-color:var(--accent2); }
-  .key.active-correct { background:var(--correct); border-color:var(--correct); }
-  .key.active-correct .hi, .key.active-correct .eng, .key.active-correct .hi-shift { color:#0f0e17; }
-  .key.active-error { background:var(--error); border-color:var(--error); animation:shake 0.25s; }
-  .key.active-error .hi, .key.active-error .eng, .key.active-error .hi-shift { color:#fff; }
-
-  .shift-indicator {
-    display:inline-flex; align-items:center; gap:6px;
-    padding:4px 12px; border-radius:8px; font-size:0.78rem; font-weight:700;
-    margin-bottom:10px;
-    background:var(--card); border:1px solid var(--border); color:var(--muted);
-  }
-  .shift-indicator.on { border-color:var(--error); color:var(--error); background:rgba(247,83,106,0.1); }
-  .shift-indicator .dot { width:7px; height:7px; border-radius:50%; background:var(--muted); }
-  .shift-indicator.on .dot { background:var(--error); }
-
-  .no-words { color:var(--muted); font-size:1rem; text-align:center; padding:20px; }
-  .hint-text { color:var(--muted); font-size:0.78rem; text-align:center; margin-top:8px; }
-
-  .word-done-anim { animation:wordPop 0.35s ease; }
-  @keyframes wordPop { 0%{transform:scale(1);} 50%{transform:scale(1.06);} 100%{transform:scale(1);} }
+.pop{animation:pop .3s ease;}
+@keyframes pop{0%{transform:scale(1);}50%{transform:scale(1.05);}100%{transform:scale(1);}}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:var(--ink5);border-radius:2px;}
+@media(max-width:860px){.app{grid-template-columns:1fr;}.sidebar{position:relative;height:auto;}.a-word{font-size:2rem;letter-spacing:4px;}.main{padding:12px;}}
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="header">
-    <h1>हिंदी टाइपिंग ट्रेनर</h1>
-    <p>InScript Keyboard • Backspace to correct • Shift = Error</p>
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-head">
+    <div class="logo">मंगल ट्रेनर</div>
+    <div class="logo-sub">InScript · Unicode · Devanagari</div>
+  </div>
+  <div class="section-label">पंक्ति चुनें</div>
+  <div class="row-btns" id="rowBtns">
+    <button class="row-btn active" data-row="home">
+      <span class="ricon">🏠</span>
+      <span><span style="display:block">Home Row</span><span class="rchars">ो े ् ि ु | प र क त च ट</span><span class="rchars">ओ ए अ इ उ | फ ड़ ख थ छ ठ</span></span>
+      <span class="rbadge" id="badge-home">0</span>
+    </button>
+    <button class="row-btn" data-row="top">
+      <span class="ricon">⬆</span>
+      <span><span style="display:block">Top Row</span><span class="rchars">ौ ै ा ी ू | ब ह ग द ज ड</span><span class="rchars">औ ऐ आ ई ऊ | भ ङ घ ध झ ढ</span></span>
+      <span class="rbadge" id="badge-top">0</span>
+    </button>
+    <button class="row-btn" data-row="bottom">
+      <span class="ricon">⬇</span>
+      <span><span style="display:block">Bottom Row</span><span class="rchars">ं ः म न व ल स ष य</span><span class="rchars">ँ ण ञ ऋ ळ श</span></span>
+      <span class="rbadge" id="badge-bottom">0</span>
+    </button>
+    <button class="row-btn" data-row="home_top">
+      <span class="ricon">⬆🏠</span>
+      <span style="display:block">Home + Top</span>
+      <span class="rbadge" id="badge-home_top">0</span>
+    </button>
+    <button class="row-btn" data-row="home_bottom">
+      <span class="ricon">🏠⬇</span>
+      <span style="display:block">Home + Bottom</span>
+      <span class="rbadge" id="badge-home_bottom">0</span>
+    </button>
+    <button class="row-btn" data-row="all">
+      <span class="ricon">★</span>
+      <span style="display:block">सभी शब्द</span>
+      <span class="rbadge" id="badge-all">0</span>
+    </button>
+  </div>
+  <div class="sidebar-stats">
+    <div class="section-label" style="padding:0 0 6px;">आँकड़े</div>
+    <div class="sstat"><span class="sstat-label">सही अक्षर</span><span class="sstat-val" style="color:var(--ok)" id="sc">0</span></div>
+    <div class="sstat"><span class="sstat-label">गलतियाँ</span><span class="sstat-val" style="color:var(--err)" id="ec">0</span></div>
+    <div class="sstat"><span class="sstat-label">शब्द पूरे</span><span class="sstat-val" style="color:var(--saffron)" id="wd">0</span></div>
+    <div class="sstat"><span class="sstat-label">सटीकता</span><span class="sstat-val" style="color:var(--teal)" id="accv">—</span></div>
+    <button class="reset-btn" onclick="resetStats()">↺ Reset</button>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="shift-pill" id="shiftPill"><span class="spill-dot"></span> Shift: OFF</div>
+    <div class="shift-ban" id="shiftBan">⚠ यहाँ Shift की जरूरत नहीं — बिना Shift के दबाएं!</div>
   </div>
 
-  <!-- Shift warning -->
-  <div class="shift-warning" id="shiftWarning">⚠ Shift key pressed! Shift changes characters — counted as an error</div>
-
-  <!-- Row tabs -->
-  <div class="tabs" id="rowTabs">
-    <button class="tab active" data-row="home">Home Row</button>
-    <button class="tab" data-row="top">Top Row</button>
-    <button class="tab" data-row="bottom">Bottom Row</button>
-    <button class="tab" data-row="full">All Words</button>
+  <div class="pool-card">
+    <div class="pool-head">
+      <span class="pool-title">✦ शब्द चुनें</span>
+      <div class="pool-filters" id="poolFilters"></div>
+      <span class="pool-count" id="poolCount">0 / 0</span>
+    </div>
+    <div class="chips" id="chipBox"></div>
   </div>
 
-  <!-- Word grid -->
-  <div class="word-panel">
-    <div class="panel-title">✦ Select Words to Practice</div>
-    <div class="word-grid" id="wordGrid"></div>
-  </div>
+  <div class="pbar-wrap"><div class="pbar-fill" id="pbarFill" style="width:0%"></div></div>
 
-  <!-- Progress -->
-  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-
-  <!-- Stats -->
-  <div class="stats">
-    <div class="stat-card"><div class="stat-val green" id="correctCount">0</div><div class="stat-label">Correct</div></div>
-    <div class="stat-card"><div class="stat-val red" id="errorCount">0</div><div class="stat-label">Errors</div></div>
-    <div class="stat-card"><div class="stat-val gold" id="wordsDone">0</div><div class="stat-label">Words Done</div></div>
-    <div class="stat-card"><div class="stat-val purple" id="accuracy">—</div><div class="stat-label">Accuracy</div></div>
-  </div>
-
-  <!-- Arena -->
   <div class="arena" id="arena">
-    <div class="no-words" id="noWordsMsg">Select words above to start practicing ↑</div>
-    <div id="typingArea" style="display:none; width:100%;">
-      <div class="word-meaning" id="wordMeaning"></div>
-      <div class="current-word" id="currentWord"></div>
-      <div class="romanized" id="romanized"></div>
-      <div class="typed-display" id="typedDisplay"></div>
+    <div class="a-empty" id="aEmpty">ऊपर से शब्द चुनें और टाइप करना शुरू करें ↑</div>
+    <div id="aContent" style="display:none;width:100%;">
+      <div class="a-meaning" id="aMeaning"></div>
+      <div class="a-word" id="aWord"></div>
+      <div class="a-roman" id="aRoman"></div>
+      <div class="a-typed" id="aTyped"></div>
     </div>
-    <div id="statusBadge" class="status-badge"></div>
-    <div class="backspace-hint" id="backspaceHint">⌫ Backspace to delete</div>
+    <div class="a-badge" id="aBadge"></div>
+    <div class="a-bsp" id="aBsp">⌫ Backspace से मिटाएं</div>
+    <button class="skip-btn" id="skipBtn" onclick="nextWord()">Skip →</button>
   </div>
 
-  <!-- Shift indicator + controls -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-    <div class="shift-indicator" id="shiftIndicator">
-      <span class="dot"></span> Shift: OFF
+  <div class="kb-card">
+    <div class="kb-head">
+      <span class="kb-title">⌨ InScript Keyboard</span>
+      <span class="kb-mode" id="kbMode">Normal Mode</span>
     </div>
-    <div class="controls" style="margin:0;">
-      <button class="btn btn-primary" id="skipBtn" onclick="nextWord()" style="display:none">Skip →</button>
-      <button class="btn btn-ghost" onclick="resetStats()">Reset</button>
-    </div>
+    <div class="krows" id="kbDiv"></div>
   </div>
-
-  <!-- Keyboard -->
-  <div class="key-hint">
-    <div class="key-hint-title">⌨ InScript Keyboard — Normal / Shift</div>
-    <div id="keyboardDisplay"></div>
-  </div>
-
-  <div class="hint-text">Type in Hindi InScript • ⌫ Backspace deletes last char • Word locks until fully correct • Shift = ❌ Error</div>
+</main>
 </div>
 
 <script>
-// ===================== WORD DATABASE =====================
-const wordDB = {
-  home: [
-    {word:'कर',roman:'kar',meaning:'do / tax'},
-    {word:'तर',roman:'tar',meaning:'wet'},
-    {word:'पर',roman:'par',meaning:'on / but'},
-    {word:'तक',roman:'tak',meaning:'until'},
-    {word:'पक',roman:'pak',meaning:'ripe'},
-    {word:'कार',roman:'kaar',meaning:'car'},
-    {word:'तार',roman:'taar',meaning:'wire'},
-    {word:'पार',roman:'paar',meaning:'across'},
-    {word:'चार',roman:'chaar',meaning:'four'},
-    {word:'करे',roman:'kare',meaning:'he/she does'},
-    {word:'परे',roman:'pare',meaning:'away / beyond'},
-    {word:'पुर',roman:'pur',meaning:'town / full'},
-    {word:'पति',roman:'pati',meaning:'husband'},
-    {word:'रति',roman:'rati',meaning:'love / Rati'},
-    {word:'चित',roman:'chit',meaning:'mind / face-up'},
-    {word:'रुक',roman:'ruk',meaning:'stop'},
-    {word:'चुक',roman:'chuk',meaning:'finished'},
-    {word:'तुक',roman:'tuk',meaning:'rhyme'},
-    {word:'पिता',roman:'pita',meaning:'father'},
-    {word:'चिता',roman:'chita',meaning:'funeral pyre'},
-    {word:'पुकार',roman:'pukaar',meaning:'call out'},
-    {word:'करतार',roman:'kartaar',meaning:'God / doer'},
-    {word:'चरित',roman:'charit',meaning:'character'},
-    {word:'तिर',roman:'tir',meaning:'arrow'},
-    {word:'तेर',roman:'ter',meaning:'your (base)'},
-    {word:'केर',roman:'ker',meaning:'of (dialect)'},
-    {word:'पुत',roman:'put',meaning:'son (base)'},
-    {word:'कति',roman:'kati',meaning:'how much'},
-  ],
-  top: [
-    {word:'दिन',roman:'din',meaning:'day'},
-    {word:'मन',roman:'man',meaning:'mind / heart'},
-    {word:'धन',roman:'dhan',meaning:'wealth'},
-    {word:'वन',roman:'van',meaning:'forest'},
-    {word:'नाम',roman:'naam',meaning:'name'},
-    {word:'काम',roman:'kaam',meaning:'work'},
-    {word:'राम',roman:'raam',meaning:'Ram (name)'},
-    {word:'दाम',roman:'daam',meaning:'price'},
-    {word:'मान',roman:'maan',meaning:'respect'},
-    {word:'दान',roman:'daan',meaning:'donation'},
-    {word:'धाम',roman:'dhaam',meaning:'abode'},
-    {word:'दिल',roman:'dil',meaning:'heart'},
-    {word:'नील',roman:'neel',meaning:'blue / indigo'},
-    {word:'माल',roman:'maal',meaning:'goods'},
-    {word:'नाल',roman:'naal',meaning:'pipe / cord'},
-    {word:'धूल',roman:'dhool',meaning:'dust'},
-    {word:'मूल',roman:'mool',meaning:'root / original'},
-  ],
-  bottom: [
-    {word:'बाल',roman:'baal',meaning:'hair / child'},
-    {word:'भाल',roman:'bhaal',meaning:'forehead'},
-    {word:'साल',roman:'saal',meaning:'year'},
-    {word:'हाल',roman:'haal',meaning:'condition'},
-    {word:'खाल',roman:'khaal',meaning:'skin / leather'},
-    {word:'बात',roman:'baat',meaning:'talk / matter'},
-    {word:'भात',roman:'bhaat',meaning:'cooked rice'},
-    {word:'सात',roman:'saat',meaning:'seven'},
-    {word:'बाज',roman:'baaj',meaning:'hawk / player'},
-    {word:'साज',roman:'saaj',meaning:'instrument'},
-    {word:'बाण',roman:'baan',meaning:'arrow'},
-    {word:'बिल',roman:'bil',meaning:'bill / burrow'},
-    {word:'खिल',roman:'khil',meaning:'bloom'},
-    {word:'सिल',roman:'sil',meaning:'stone slab'},
-    {word:'सुख',roman:'sukh',meaning:'happiness'},
-  ],
-  full: []
-};
-wordDB.full = [...wordDB.home, ...wordDB.top, ...wordDB.bottom]
-  .filter((w,i,arr) => arr.findIndex(x=>x.word===w.word)===i);
-
-// ===================== InScript Map (Normal + Shift) =====================
-// Each entry: [normalChar, shiftChar]
-const inscript = {
-  'q':['ौ','ॊ'], 'w':['ै','ॅ'], 'e':['ा','ऑ'], 'r':['ी','ऋ'], 't':['ू','ॄ'],
-  'y':['ब','भ'], 'u':['ह','ङ'], 'i':['ग','घ'], 'o':['द','ध'], 'p':['ज','झ'],
-  'a':['ो','ऒ'], 's':['े','ॆ'], 'd':['्',''], 'f':['ि','ॉ'], 'g':['ु','ऊ'],
-  'h':['प','फ'], 'j':['र','ड़'], 'k':['क','ख'], 'l':['त','थ'], ';':['च','छ'],
-  'z':['ॆ','ऍ'], 'x':['ं','ः'], 'c':['म','ण'], 'v':['न','ञ'], 'b':['व','ऋ'],
-  'n':['ल','ळ'], 'm':['स','श'], ',':['ष','।'], '.':['।','.']
+// ══════════════════════════════════════════════════════
+// COMPLETE INSCRIPT MAP  key→[normal,shift]
+// ══════════════════════════════════════════════════════
+const INS = {
+  '`':['़','ऒ'],
+  '1':['१','!'],'2':['२','"'],'3':['३','#'],'4':['४','$'],'5':['५','%'],
+  '6':['६','^'],'7':['७','&'],'8':['८','*'],'9':['९','('],'0':['०',')'],
+  '-':['ः','ऑ'],'=':['+','ॐ'],
+  // TOP ROW
+  'q':['ौ','औ'],'w':['ै','ऐ'],'e':['ा','आ'],'r':['ी','ई'],'t':['ू','ऊ'],
+  'y':['ब','भ'],'u':['ह','ङ'],'i':['ग','घ'],'o':['द','ध'],'p':['ज','झ'],
+  '[':['ड','ढ'],']':['़','ञ'],
+  // HOME ROW
+  'a':['ो','ओ'],'s':['े','ए'],'d':['्','अ'],'f':['ि','इ'],'g':['ु','उ'],
+  'h':['प','फ'],'j':['र','ड़'],'k':['क','ख'],'l':['त','थ'],';':['च','छ'],"'":['\u091f','\u0920'],
+  // BOTTOM ROW
+  'z':['ं','ँ'],'x':['ः','ण'],'c':['म','ण'],'v':['न','ञ'],'b':['व','ऋ'],
+  'n':['ल','ळ'],'m':['स','श'],',':['ष','।'],'.':['।','.'],'/':['य','य़'],
 };
 
-// Build reverse lookup: devanagari char → key info
-const charToKey = {};
-Object.entries(inscript).forEach(([key, [norm, shift]]) => {
-  if (norm) charToKey[norm] = {key, shift: false};
-  if (shift) charToKey[shift] = {key, shift: true};
+// Row classification for keyboard display
+const KEY_ROW = {
+  'q':'top','w':'top','e':'top','r':'top','t':'top','y':'top','u':'top','i':'top','o':'top','p':'top','[':'top',']':'top',
+  'a':'home','s':'home','d':'home','f':'home','g':'home','h':'home','j':'home','k':'home','l':'home',';':'home',"'":'home',
+  'z':'bot','x':'bot','c':'bot','v':'bot','b':'bot','n':'bot','m':'bot',',':'bot','.':'bot','/':'bot',
+};
+
+const KB_ROWS = [
+  ['q','w','e','r','t','y','u','i','o','p','[',']'],
+  ['a','s','d','f','g','h','j','k','l',';',"'"],
+  ['z','x','c','v','b','n','m',',','.','/'],
+];
+
+// ══════════════════════════════════════════════════════
+// CHARACTER SETS PER ROW (strictly validated)
+// ══════════════════════════════════════════════════════
+const ROW_CHARS = {
+  home: new Set(['ो','े','्','ि','ु','प','र','क','त','च','ट','ओ','ए','अ','इ','उ','फ','ड़','ख','थ','छ','ठ']),
+  top:  new Set(['ौ','ै','ा','ी','ू','ब','ह','ग','द','ज','ड','औ','ऐ','आ','ई','ऊ','भ','ङ','घ','ध','झ','ढ','ञ']),
+  bot:  new Set(['ं','ः','म','न','व','ल','स','ष','।','य','ँ','ण','ञ','ऋ','ळ','श']),
+};
+
+function usesOnlyRows(word, allowedRows) {
+  const allowed = new Set();
+  allowedRows.forEach(r => ROW_CHARS[r].forEach(c => allowed.add(c)));
+  return [...word].every(c => allowed.has(c));
+}
+
+// ══════════════════════════════════════════════════════
+// WORD DATABASE — strictly row-validated
+// w=hindi, r=roman, m=meaning, type=matra-category
+// ══════════════════════════════════════════════════════
+const RAW_WORDS = [
+  // ── HOME ROW ──────────────────────────────────────
+  // No matra (pure consonants + halant)
+  {w:'कर',r:'kar',m:'करना',row:'home',type:'plain'},
+  {w:'तर',r:'tar',m:'गीला',row:'home',type:'plain'},
+  {w:'पर',r:'par',m:'पर/लेकिन',row:'home',type:'plain'},
+  {w:'रक',r:'rak',m:'रोकना',row:'home',type:'plain'},
+  {w:'तक',r:'tak',m:'तक (until)',row:'home',type:'plain'},
+  {w:'पक',r:'pak',m:'पकना',row:'home',type:'plain'},
+  {w:'चर',r:'char',m:'चरना',row:'home',type:'plain'},
+  {w:'रच',r:'rach',m:'रचना',row:'home',type:'plain'},
+  {w:'चक',r:'chak',m:'चक्र base',row:'home',type:'plain'},
+  {w:'कट',r:'kat',m:'काटना base',row:'home',type:'plain'},
+  {w:'पट',r:'pat',m:'पट',row:'home',type:'plain'},
+  {w:'तट',r:'tat',m:'तट (coast)',row:'home',type:'plain'},
+  {w:'चट',r:'chat',m:'चटना',row:'home',type:'plain'},
+  {w:'रट',r:'rat',m:'रटना',row:'home',type:'plain'},
+  {w:'टक',r:'tak',m:'टकराना',row:'home',type:'plain'},
+  {w:'खर',r:'khar',m:'खरा (pure)',row:'home',type:'plain'},
+  {w:'खत',r:'khat',m:'खत (letter)',row:'home',type:'plain'},
+  {w:'थक',r:'thak',m:'थकना',row:'home',type:'plain'},
+  {w:'फर',r:'phar',m:'फरना',row:'home',type:'plain'},
+  {w:'छत',r:'chhat',m:'छत (roof)',row:'home',type:'plain'},
+  {w:'छक',r:'chhak',m:'छकना',row:'home',type:'plain'},
+  // with ् (halant) — conjuncts
+  {w:'तर्क',r:'tark',m:'तर्क (logic)',row:'home',type:'halant'},
+  {w:'कर्क',r:'kark',m:'कर्क (crab)',row:'home',type:'halant'},
+  {w:'चर्च',r:'charch',m:'चर्च (church)',row:'home',type:'halant'},
+  {w:'खर्च',r:'kharch',m:'खर्च (expense)',row:'home',type:'halant'},
+  // with ि (f key)
+  {w:'कति',r:'kati',m:'कितना',row:'home',type:'i-matra'},
+  {w:'रति',r:'rati',m:'रति (love)',row:'home',type:'i-matra'},
+  {w:'पति',r:'pati',m:'पति (husband)',row:'home',type:'i-matra'},
+  {w:'तिर',r:'tir',m:'तीर (arrow)',row:'home',type:'i-matra'},
+  {w:'चित',r:'chit',m:'चित्त',row:'home',type:'i-matra'},
+  {w:'किर',r:'kir',m:'किरण base',row:'home',type:'i-matra'},
+  {w:'तिक',r:'tik',m:'टिकना',row:'home',type:'i-matra'},
+  {w:'रिक',r:'rik',m:'रिक्त base',row:'home',type:'i-matra'},
+  {w:'खति',r:'khati',m:'खतरा base',row:'home',type:'i-matra'},
+  {w:'ठिक',r:'thik',m:'ठीक (correct)',row:'home',type:'i-matra'},
+  {w:'फिर',r:'phir',m:'फिर (again)',row:'home',type:'i-matra'},
+  {w:'टिक',r:'tik',m:'टिकना',row:'home',type:'i-matra'},
+  {w:'छति',r:'chhati',m:'क्षति (loss)',row:'home',type:'i-matra'},
+  {w:'चरित',r:'charit',m:'चरित्र',row:'home',type:'i-matra'},
+  {w:'रिति',r:'riti',m:'रीति (custom)',row:'home',type:'i-matra'},
+  {w:'पिफर',r:'pifar',m:'पिफर',row:'home',type:'i-matra'},
+  // with ु (g key)
+  {w:'रुक',r:'ruk',m:'रुको (stop)',row:'home',type:'u-matra'},
+  {w:'चुक',r:'chuk',m:'चुकना',row:'home',type:'u-matra'},
+  {w:'तुक',r:'tuk',m:'तुक (rhyme)',row:'home',type:'u-matra'},
+  {w:'पुर',r:'pur',m:'पुर (town)',row:'home',type:'u-matra'},
+  {w:'कुत',r:'kut',m:'कुत्ता base',row:'home',type:'u-matra'},
+  {w:'पुत',r:'put',m:'पुत्र base',row:'home',type:'u-matra'},
+  {w:'चुर',r:'chur',m:'चोरी base',row:'home',type:'u-matra'},
+  {w:'खुर',r:'khur',m:'खुर (hoof)',row:'home',type:'u-matra'},
+  {w:'थुक',r:'thuk',m:'थूकना',row:'home',type:'u-matra'},
+  {w:'छुट',r:'chhut',m:'छुट्टी base',row:'home',type:'u-matra'},
+  {w:'ठुक',r:'thuk',m:'ठुकना',row:'home',type:'u-matra'},
+  {w:'टुक',r:'tuk',m:'टुकड़ा base',row:'home',type:'u-matra'},
+  {w:'फुर',r:'phur',m:'फुरना',row:'home',type:'u-matra'},
+  {w:'पुरित',r:'purit',m:'पूरित',row:'home',type:'u-matra'},
+  // with े (s key)
+  {w:'करे',r:'kare',m:'वह करे',row:'home',type:'e-matra'},
+  {w:'परे',r:'pare',m:'परे (away)',row:'home',type:'e-matra'},
+  {w:'तरे',r:'tare',m:'तरे',row:'home',type:'e-matra'},
+  {w:'चरे',r:'chare',m:'चरे',row:'home',type:'e-matra'},
+  {w:'रेत',r:'ret',m:'रेत (sand)',row:'home',type:'e-matra'},
+  {w:'केर',r:'ker',m:'केर',row:'home',type:'e-matra'},
+  {w:'तेर',r:'ter',m:'तेरा base',row:'home',type:'e-matra'},
+  {w:'खेत',r:'khet',m:'खेत (field)',row:'home',type:'e-matra'},
+  {w:'थेर',r:'ther',m:'थेर',row:'home',type:'e-matra'},
+  {w:'छेत',r:'chhet',m:'छेद base',row:'home',type:'e-matra'},
+  {w:'ठेक',r:'thek',m:'ठेकना',row:'home',type:'e-matra'},
+  {w:'फेर',r:'pher',m:'फेर (again)',row:'home',type:'e-matra'},
+  {w:'टेर',r:'ter',m:'टेरना',row:'home',type:'e-matra'},
+  {w:'रेकित',r:'rekit',m:'रेकित',row:'home',type:'e-matra'},
+  // with ो (a key)
+  {w:'रोक',r:'rok',m:'रोक (stop)',row:'home',type:'o-matra'},
+  {w:'तोक',r:'tok',m:'टोकना',row:'home',type:'o-matra'},
+  {w:'पोत',r:'pot',m:'जहाज',row:'home',type:'o-matra'},
+  {w:'करो',r:'karo',m:'करो (do it!)',row:'home',type:'o-matra'},
+  {w:'खोट',r:'khot',m:'खोट (flaw)',row:'home',type:'o-matra'},
+  {w:'खोर',r:'khor',m:'खोर',row:'home',type:'o-matra'},
+  {w:'थोक',r:'thok',m:'थोक (wholesale)',row:'home',type:'o-matra'},
+  {w:'छोर',r:'chhor',m:'छोर (edge)',row:'home',type:'o-matra'},
+  {w:'ठोक',r:'thok',m:'ठोकना',row:'home',type:'o-matra'},
+  {w:'टोक',r:'tok',m:'टोकना',row:'home',type:'o-matra'},
+  {w:'रोकित',r:'rokit',m:'रोकित',row:'home',type:'o-matra'},
+  {w:'फोत',r:'phot',m:'फोटो base',row:'home',type:'o-matra'},
+  // independent vowels (Shift keys: D=अ, F=इ, G=उ, S=ए, A=ओ)
+  {w:'अकर',r:'akar',m:'अकर',row:'home',type:'vowel-ind'},
+  {w:'अपर',r:'apar',m:'अपर (other)',row:'home',type:'vowel-ind'},
+  {w:'अतर',r:'atar',m:'अतर',row:'home',type:'vowel-ind'},
+  {w:'इतर',r:'itar',m:'इतर (other)',row:'home',type:'vowel-ind'},
+  {w:'उचित',r:'uchit',m:'उचित (proper)',row:'home',type:'vowel-ind'},
+  {w:'अचित',r:'achit',m:'अचेत base',row:'home',type:'vowel-ind'},
+  {w:'अरुचि',r:'aruchi',m:'अरुचि',row:'home',type:'vowel-ind'},
+  {w:'ओकर',r:'okar',m:'ओकर',row:'home',type:'vowel-ind'},
+  {w:'एकत',r:'ekat',m:'एकत',row:'home',type:'vowel-ind'},
+  {w:'इकर',r:'ikar',m:'इकर',row:'home',type:'vowel-ind'},
+  {w:'उकत',r:'ukat',m:'उकत',row:'home',type:'vowel-ind'},
+  {w:'ओत',r:'ot',m:'ओत',row:'home',type:'vowel-ind'},
+  {w:'एक',r:'ek',m:'एक (one)',row:'home',type:'vowel-ind'},  // ए+क only home chars ✓
+  {w:'ओर',r:'or',m:'ओर (direction)',row:'home',type:'vowel-ind'}, // ओ+र ✓
+  {w:'इक',r:'ik',m:'इक',row:'home',type:'vowel-ind'},
+  {w:'उक',r:'uk',m:'उक',row:'home',type:'vowel-ind'},
+
+  // ── TOP ROW ──────────────────────────────────────
+  {w:'दिन',r:'din',m:'दिन (day)',row:'top',type:'plain'},
+  {w:'धन',r:'dhan',m:'धन (wealth)',row:'top',type:'plain'},
+  {w:'जग',r:'jag',m:'जागना',row:'top',type:'plain'},
+  {w:'बड',r:'bad',m:'बड़ा base',row:'top',type:'plain'},
+  {w:'हज',r:'haj',m:'हज',row:'top',type:'plain'},
+  {w:'गज',r:'gaj',m:'गज (elephant)',row:'top',type:'plain'},
+  {w:'दल',r:'dal',m:'दल (group)',row:'top',type:'plain'},
+  {w:'जल',r:'jal',m:'जल (water)',row:'top',type:'plain'},
+  {w:'हल',r:'hal',m:'हल (solution)',row:'top',type:'plain'},
+  {w:'बल',r:'bal',m:'बल (strength)',row:'top',type:'plain'},
+  {w:'गल',r:'gal',m:'गलना',row:'top',type:'plain'},
+  {w:'धज',r:'dhaj',m:'ध्वज base',row:'top',type:'plain'},
+  {w:'झड',r:'jhad',m:'झड़ना',row:'top',type:'plain'},
+  // with ा (e=top)
+  {w:'नाम',r:'naam',m:'नाम (name)',row:'top',type:'aa-matra'},
+  {w:'दाम',r:'daam',m:'दाम (price)',row:'top',type:'aa-matra'},
+  {w:'जाल',r:'jaal',m:'जाल (net)',row:'top',type:'aa-matra'},
+  {w:'हाल',r:'haal',m:'हाल (condition)',row:'top',type:'aa-matra'},
+  {w:'माल',r:'maal',m:'माल (goods)',row:'top',type:'aa-matra'},
+  {w:'नाल',r:'naal',m:'नाल (pipe)',row:'top',type:'aa-matra'},
+  {w:'दाग',r:'daag',m:'दाग (stain)',row:'top',type:'aa-matra'},
+  {w:'जाग',r:'jaag',m:'जागना',row:'top',type:'aa-matra'},
+  {w:'बाग',r:'baag',m:'बाग (garden)',row:'top',type:'aa-matra'},
+  {w:'हाथ',r:'haath',m:'हाथ (hand)',row:'top',type:'aa-matra'},
+  {w:'बाद',r:'baad',m:'बाद (after)',row:'top',type:'aa-matra'},
+  {w:'जादू',r:'jaadu',m:'जादू (magic)',row:'top',type:'aa-matra'},
+  {w:'बादल',r:'baadal',m:'बादल (cloud)',row:'top',type:'aa-matra'},
+  {w:'धागा',r:'dhaaga',m:'धागा (thread)',row:'top',type:'aa-matra'},
+  {w:'भाला',r:'bhaala',m:'भाला (spear)',row:'top',type:'aa-matra'},
+  {w:'घाव',r:'ghaav',m:'घाव (wound)',row:'top',type:'aa-matra'},
+  // with ी (r=top)
+  {w:'दीप',r:'deep',m:'दीपक (lamp)',row:'top',type:'ii-matra'},
+  {w:'हीन',r:'heen',m:'हीन (inferior)',row:'top',type:'ii-matra'},
+  {w:'जीत',r:'jeet',m:'जीत (win)',row:'top',type:'ii-matra'},
+  {w:'बीत',r:'beet',m:'बीतना',row:'top',type:'ii-matra'},
+  {w:'नदी',r:'nadi',m:'नदी (river)',row:'top',type:'ii-matra'},
+  {w:'गली',r:'gali',m:'गली (lane)',row:'top',type:'ii-matra'},
+  {w:'हाथी',r:'haathi',m:'हाथी (elephant)',row:'top',type:'ii-matra'},
+  // with ू (t=top)
+  {w:'धूल',r:'dhool',m:'धूल (dust)',row:'top',type:'uu-matra'},
+  {w:'भूल',r:'bhool',m:'भूल (mistake)',row:'top',type:'uu-matra'},
+  {w:'जूड',r:'jood',m:'जूड़ा base',row:'top',type:'uu-matra'},
+  {w:'हू',r:'hoo',m:'हू',row:'top',type:'uu-matra'},
+  {w:'दूध',r:'doodh',m:'दूध (milk)',row:'top',type:'uu-matra'},
+  {w:'बूढ',r:'boodh',m:'बूढ़ा base',row:'top',type:'uu-matra'},
+  // with ै (w=top)
+  {w:'जैन',r:'jain',m:'जैन',row:'top',type:'ai-matra'},
+  {w:'हैज',r:'haij',m:'हैज',row:'top',type:'ai-matra'},
+  {w:'गैस',r:'gais',m:'गैस (gas)',row:'top',type:'ai-matra'},
+  // with ौ (q=top)
+  {w:'दौड',r:'daud',m:'दौड़ (race)',row:'top',type:'au-matra'},
+  {w:'हौज',r:'hauj',m:'हौज (tank)',row:'top',type:'au-matra'},
+  // independent vowels (shift)
+  {w:'आम',r:'aam',m:'आम (mango)',row:'top',type:'vowel-ind'},
+  {w:'आग',r:'aag',m:'आग (fire)',row:'top',type:'vowel-ind'},
+  {w:'आज',r:'aaj',m:'आज (today)',row:'top',type:'vowel-ind'},
+  {w:'आन',r:'aan',m:'आन (honour)',row:'top',type:'vowel-ind'},
+  {w:'ईद',r:'eed',m:'ईद',row:'top',type:'vowel-ind'},
+  {w:'ऊद',r:'ood',m:'ऊद',row:'top',type:'vowel-ind'},
+  {w:'ऐनक',r:'ainak',m:'ऐनक (specs)',row:'top',type:'vowel-ind'},
+  {w:'औजार',r:'aujaar',m:'औजार (tool)',row:'top',type:'vowel-ind'},
+  {w:'आदत',r:'aadat',m:'आदत (habit)',row:'top',type:'vowel-ind'},
+  {w:'आकाश',r:'aakaash',m:'आकाश (sky)',row:'top',type:'vowel-ind'},
+  {w:'ऊजा',r:'ooja',m:'ऊर्जा base',row:'top',type:'vowel-ind'},
+  {w:'आधार',r:'aadhaar',m:'आधार',row:'top',type:'vowel-ind'},
+  {w:'भाई',r:'bhaai',m:'भाई (brother)',row:'top',type:'vowel-ind'},
+  {w:'आभा',r:'aabha',m:'आभा (glow)',row:'top',type:'vowel-ind'},
+
+  // ── BOTTOM ROW ──────────────────────────────────────
+  {w:'नल',r:'nal',m:'नल (tap)',row:'bot',type:'plain'},
+  {w:'मल',r:'mal',m:'मल',row:'bot',type:'plain'},
+  {w:'वन',r:'van',m:'वन (forest)',row:'bot',type:'plain'},
+  {w:'सब',r:'sab',m:'सब (all)',row:'bot',type:'plain'},
+  {w:'नस',r:'nas',m:'नस (vein)',row:'bot',type:'plain'},
+  {w:'मन',r:'man',m:'मन (mind)',row:'bot',type:'plain'},
+  {w:'सन',r:'san',m:'सन (hemp)',row:'bot',type:'plain'},
+  {w:'लय',r:'lay',m:'लय (rhythm)',row:'bot',type:'plain'},
+  {w:'नव',r:'nav',m:'नव (new)',row:'bot',type:'plain'},
+  {w:'वम',r:'vam',m:'वमन base',row:'bot',type:'plain'},
+  {w:'यम',r:'yam',m:'यम (death god)',row:'bot',type:'plain'},
+  {w:'मस',r:'mas',m:'मस्त base',row:'bot',type:'plain'},
+  {w:'सल',r:'sal',m:'सल',row:'bot',type:'plain'},
+  // with ं (z=bottom)
+  {w:'मंत्र',r:'mantra',m:'मंत्र',row:'bot',type:'anusvara'},
+  {w:'संसार',r:'sansaar',m:'संसार (world)',row:'bot',type:'anusvara'},
+  {w:'संगम',r:'sangam',m:'संगम',row:'bot',type:'anusvara'},
+  {w:'मंगल',r:'mangal',m:'मंगल (auspicious)',row:'bot',type:'anusvara'},
+  {w:'संकट',r:'sankat',m:'संकट (crisis)',row:'bot',type:'anusvara'},
+  {w:'सुनो',r:'suno',m:'सुनो (listen)',row:'bot',type:'plain'},
+  {w:'नमक',r:'namak',m:'नमक (salt)',row:'bot',type:'plain'},
+  {w:'नवल',r:'naval',m:'नवल (novel)',row:'bot',type:'plain'},
+  // shift chars: ण श ळ ञ ऋ
+  {w:'शण',r:'shan',m:'शण',row:'bot',type:'shift-cons'},
+  {w:'लण',r:'lan',m:'लण',row:'bot',type:'shift-cons'},
+  {w:'शन',r:'shan',m:'शन',row:'bot',type:'shift-cons'},
+  {w:'णय',r:'nay',m:'णय',row:'bot',type:'shift-cons'},
+  {w:'यवन',r:'yavan',m:'यवन',row:'bot',type:'shift-cons'},
+  {w:'वण',r:'van',m:'वर्ण base',row:'bot',type:'shift-cons'},
+  {w:'शव',r:'shav',m:'शव (corpse)',row:'bot',type:'shift-cons'},
+  {w:'शल',r:'shal',m:'शल',row:'bot',type:'shift-cons'},
+  {w:'ळव',r:'lav',m:'लव',row:'bot',type:'shift-cons'},
+  {w:'मणि',r:'mani',m:'मणि (gem)',row:'bot',type:'shift-cons'},
+  {w:'वणिक',r:'vanik',m:'वणिक (trader)',row:'bot',type:'shift-cons'},
+
+  // ── HOME+TOP COMBOS ──────────────────────────────────────
+  {w:'काम',r:'kaam',m:'काम (work)',row:'home_top',type:'combo'},
+  {w:'राम',r:'raam',m:'राम',row:'home_top',type:'combo'},
+  {w:'धर्म',r:'dharm',m:'धर्म',row:'home_top',type:'combo'},
+  {w:'जीवन',r:'jeevan',m:'जीवन (life)',row:'home_top',type:'combo'},
+  {w:'धरती',r:'dharti',m:'धरती (earth)',row:'home_top',type:'combo'},
+  {w:'गीत',r:'geet',m:'गीत (song)',row:'home_top',type:'combo'},
+  {w:'नगर',r:'nagar',m:'नगर (city)',row:'home_top',type:'combo'},
+  {w:'जगत',r:'jagat',m:'जगत (world)',row:'home_top',type:'combo'},
+  {w:'नदी',r:'nadi',m:'नदी (river)',row:'home_top',type:'combo'},
+  {w:'दिल',r:'dil',m:'दिल (heart)',row:'home_top',type:'combo'},
+  {w:'बात',r:'baat',m:'बात (talk)',row:'home_top',type:'combo'},
+  {w:'हाथ',r:'haath',m:'हाथ (hand)',row:'home_top',type:'combo'},
+  {w:'ज्ञान',r:'gyaan',m:'ज्ञान (knowledge)',row:'home_top',type:'combo'},
+  {w:'प्रकाश',r:'prakaash',m:'प्रकाश (light)',row:'home_top',type:'combo'},
+  {w:'तारक',r:'taarak',m:'तारक',row:'home_top',type:'combo'},
+
+  // ── HOME+BOTTOM COMBOS ──────────────────────────────────────
+  {w:'नमस्ते',r:'namaste',m:'नमस्ते',row:'home_bot',type:'combo'},
+  {w:'भारत',r:'bhaarat',m:'भारत',row:'home_bot',type:'combo'},
+  {w:'सरकार',r:'sarkaar',m:'सरकार',row:'home_bot',type:'combo'},
+  {w:'संसार',r:'sansaar',m:'संसार (world)',row:'home_bot',type:'combo'},
+  {w:'नमक',r:'namak',m:'नमक (salt)',row:'home_bot',type:'combo'},
+  {w:'खबर',r:'khabar',m:'खबर (news)',row:'home_bot',type:'combo'},
+  {w:'मनोज',r:'manoj',m:'मनोज (name)',row:'home_bot',type:'combo'},
+  {w:'परिवार',r:'parivaar',m:'परिवार (family)',row:'home_bot',type:'combo'},
+  {w:'सवाल',r:'savaal',m:'सवाल (question)',row:'home_bot',type:'combo'},
+];
+
+// ══════════════════════════════════════════════════════
+// BUILD ROW GROUPS (strict char validation for home/top/bot)
+// ══════════════════════════════════════════════════════
+function strictOk(word, rowSet) {
+  return [...word].every(c => rowSet.has(c));
+}
+
+const GROUPS = {
+  home:       RAW_WORDS.filter(w=>w.row==='home' && strictOk(w.w, ROW_CHARS.home)),
+  top:        RAW_WORDS.filter(w=>w.row==='top'  && strictOk(w.w, ROW_CHARS.top)),
+  bottom:     RAW_WORDS.filter(w=>w.row==='bot'  && strictOk(w.w, ROW_CHARS.bot)),
+  home_top:   RAW_WORDS.filter(w=>w.row==='home_top'),
+  home_bottom:RAW_WORDS.filter(w=>w.row==='home_bot'),
+  all:        [],
+};
+// Dedupe all
+const seen=new Set();
+RAW_WORDS.forEach(w=>{if(!seen.has(w.w)){seen.add(w.w);GROUPS.all.push(w);}});
+
+// Type labels for filter buttons per group
+const TYPE_LABELS = {
+  'plain':'व्यंजन','halant':'हलंत (्)','i-matra':'ि मात्रा','u-matra':'ु मात्रा',
+  'e-matra':'े मात्रा','o-matra':'ो मात्रा','vowel-ind':'स्वतंत्र स्वर',
+  'aa-matra':'ा मात्रा','ii-matra':'ी मात्रा','uu-matra':'ू मात्रा',
+  'ai-matra':'ै मात्रा','au-matra':'ौ मात्रा','anusvara':'अनुस्वार (ं)',
+  'shift-cons':'Shift व्यंजन','combo':'संयुक्त'
+};
+
+// Update badges
+['home','top','bottom','home_top','home_bottom','all'].forEach(k=>{
+  const el=document.getElementById('badge-'+k);
+  if(el) el.textContent=GROUPS[k].length;
 });
 
-// Keyboard rows for display
-const keyRows = {
-  top:    ['q','w','e','r','t','y','u','i','o','p'],
-  home:   ['a','s','d','f','g','h','j','k','l',';'],
-  bottom: ['z','x','c','v','b','n','m',',','.']
-};
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let curRow='home', selW=[], actW=[], curObj=null, curIdx=0, typed=[];
+let SC=0,EC=0,WD=0, shiftDown=false, stTmr=null, shiftTmr=null;
+let activeFilter='all'; // type filter
 
-// ===================== STATE =====================
-let selectedWords = [], activeWords = [], currentWordObj = null;
-let currentIndex = 0;
-let typedStates = []; // array of 'correct'|'error'|null per char position
-let correctTotal = 0, errorTotal = 0, wordsDone = 0;
-let currentRow = 'home';
-let shiftDown = false;
-let statusTimer = null;
-let shiftWarningTimer = null;
-
-// ===================== INIT =====================
-function init() {
-  renderWordGrid();
-  renderKeyboard();
-  document.addEventListener('keydown', handleKeyDown);
-  document.addEventListener('keyup', handleKeyUp);
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+function init(){
+  renderKb(); renderFilters(); renderGrid();
+  document.addEventListener('keydown',onKD);
+  document.addEventListener('keyup',onKU);
+  document.getElementById('rowBtns').addEventListener('click',onRowClick);
 }
 
-// ===================== WORD GRID =====================
-function renderWordGrid() {
-  const grid = document.getElementById('wordGrid');
-  const words = wordDB[currentRow];
-  grid.innerHTML = '';
-  const allChip = document.createElement('div');
-  allChip.className = 'word-chip select-all' + (selectedWords.length===words.length?' selected':'');
-  allChip.textContent = selectedWords.length===words.length ? '✓ All Selected' : '+ Select All';
-  allChip.onclick = () => toggleAll(words);
-  grid.appendChild(allChip);
-  words.forEach(w => {
-    const chip = document.createElement('div');
-    chip.className = 'word-chip' + (selectedWords.find(s=>s.word===w.word)?' selected':'');
-    chip.textContent = w.word;
-    chip.title = w.meaning;
-    chip.onclick = () => toggleWord(w);
-    grid.appendChild(chip);
+// ══════════════════════════════════════════════════════
+// ROW SWITCH
+// ══════════════════════════════════════════════════════
+function onRowClick(e){
+  const btn=e.target.closest('.row-btn'); if(!btn)return;
+  document.querySelectorAll('.row-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  curRow=btn.dataset.row; selW=[]; activeFilter='all';
+  renderFilters(); renderGrid(); startPrac();
+  // highlight keyboard row
+  const kd=document.getElementById('kbDiv');
+  kd.className='';
+  if(curRow==='home')kd.classList.add('kb-show-home');
+  else if(curRow==='top')kd.classList.add('kb-show-top');
+  else if(curRow==='bottom')kd.classList.add('kb-show-bot');
+}
+
+// ══════════════════════════════════════════════════════
+// FILTER BUTTONS (by matra type)
+// ══════════════════════════════════════════════════════
+function renderFilters(){
+  const box=document.getElementById('poolFilters');
+  box.innerHTML='';
+  const words=GROUPS[curRow]||[];
+  const types=['all',...new Set(words.map(w=>w.type))];
+  types.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='filter-btn'+(t===activeFilter?' active':'');
+    b.textContent= t==='all'? 'सभी प्रकार' : (TYPE_LABELS[t]||t);
+    b.onclick=()=>{activeFilter=t; selW=[]; renderFilters(); renderGrid(); startPrac();};
+    box.appendChild(b);
   });
 }
 
-function toggleWord(w) {
-  const idx = selectedWords.findIndex(s=>s.word===w.word);
-  if (idx>=0) selectedWords.splice(idx,1); else selectedWords.push(w);
-  renderWordGrid(); startPractice();
+// ══════════════════════════════════════════════════════
+// WORD GRID
+// ══════════════════════════════════════════════════════
+function getFilteredWords(){
+  const words=GROUPS[curRow]||[];
+  return activeFilter==='all' ? words : words.filter(w=>w.type===activeFilter);
 }
-
-function toggleAll(words) {
-  selectedWords = selectedWords.length===words.length ? [] : [...words];
-  renderWordGrid(); startPractice();
-}
-
-// ===================== START PRACTICE =====================
-function startPractice() {
-  if (selectedWords.length===0) {
-    document.getElementById('noWordsMsg').style.display='block';
-    document.getElementById('typingArea').style.display='none';
-    document.getElementById('skipBtn').style.display='none';
-    currentWordObj=null; return;
-  }
-  document.getElementById('noWordsMsg').style.display='none';
-  document.getElementById('typingArea').style.display='block';
-  document.getElementById('skipBtn').style.display='inline-block';
-  activeWords = shuffle([...selectedWords]);
-  currentIndex=0; loadWord();
-}
-
-function shuffle(arr) {
-  for (let i=arr.length-1;i>0;i--) {
-    const j=Math.floor(Math.random()*(i+1));
-    [arr[i],arr[j]]=[arr[j],arr[i]];
-  }
-  return arr;
-}
-
-function loadWord() {
-  if (activeWords.length===0) activeWords=shuffle([...selectedWords]);
-  currentWordObj = activeWords[currentIndex % activeWords.length];
-  currentIndex++;
-  typedStates = [];
-  hideStatus();
-  document.getElementById('arena').classList.remove('has-error');
-  document.getElementById('backspaceHint').classList.remove('show');
-  document.getElementById('typedDisplay').textContent = '';
-  renderWord();
-  updateProgress();
-}
-
-function nextWord() {
-  if (!currentWordObj) return;
-  document.getElementById('typingArea').classList.add('word-done-anim');
-  setTimeout(()=>document.getElementById('typingArea').classList.remove('word-done-anim'),350);
-  wordsDone++;
-  document.getElementById('wordsDone').textContent = wordsDone;
-  updateAccuracy();
-  loadWord();
-}
-
-// ===================== RENDER WORD =====================
-function renderWord() {
-  if (!currentWordObj) return;
-  const chars = [...currentWordObj.word];
-  document.getElementById('currentWord').innerHTML = chars.map((c,i)=>{
-    let cls = i===0 ? 'char current' : 'char pending';
-    return `<span class="${cls}" data-i="${i}">${c}</span>`;
-  }).join('');
-  document.getElementById('wordMeaning').textContent = currentWordObj.meaning;
-  document.getElementById('romanized').textContent = currentWordObj.roman;
-}
-
-function updateCharDisplay() {
-  if (!currentWordObj) return;
-  const chars = [...currentWordObj.word];
-  const pos = typedStates.length;
-  document.querySelectorAll('#currentWord .char').forEach((span,i) => {
-    if (i < pos) {
-      span.className = 'char ' + (typedStates[i]==='correct' ? 'correct' : 'error');
-    } else if (i === pos) {
-      span.className = 'char current';
-    } else {
-      span.className = 'char pending';
-    }
+function renderGrid(){
+  const box=document.getElementById('chipBox');
+  const words=getFilteredWords();
+  box.innerHTML='';
+  // Select all chip
+  const allChip=document.createElement('span');
+  allChip.className='chip sel';
+  allChip.style.borderColor='var(--saffron)'; allChip.style.color='var(--saffron)';
+  allChip.textContent=selW.length===words.length?'✓ सभी हटाएं':'+सभी';
+  allChip.onclick=()=>{selW=selW.length===words.length?[]:[...words];renderGrid();startPrac();};
+  box.appendChild(allChip);
+  words.forEach(w=>{
+    const c=document.createElement('span');
+    c.className='chip'+(selW.find(s=>s.w===w.w)?' sel':'');
+    c.textContent=w.w; c.title=w.m+' — '+w.r;
+    c.onclick=()=>toggleW(w);
+    box.appendChild(c);
   });
-  // Show typed count in typed display
-  const correct = typedStates.filter(s=>s==='correct').length;
-  const total = chars.length;
-  document.getElementById('typedDisplay').textContent = pos > 0 ? `${pos}/${total} typed` : '';
+  document.getElementById('poolCount').textContent=`${selW.length} / ${words.length} चुने`;
+}
+function toggleW(w){
+  const i=selW.findIndex(s=>s.w===w.w);
+  if(i>=0)selW.splice(i,1); else selW.push(w);
+  renderGrid(); startPrac();
 }
 
-// ===================== KEY HANDLERS =====================
-function handleKeyDown(e) {
-  // Track shift state
-  if (e.key === 'Shift') {
-    shiftDown = true;
-    updateShiftIndicator(true);
-    return; // don't process shift alone yet, wait to see if another key is pressed
+// ══════════════════════════════════════════════════════
+// PRACTICE ENGINE
+// ══════════════════════════════════════════════════════
+function startPrac(){
+  document.getElementById('poolCount').textContent=`${selW.length} / ${getFilteredWords().length} चुने`;
+  if(!selW.length){
+    document.getElementById('aEmpty').style.display='block';
+    document.getElementById('aContent').style.display='none';
+    document.getElementById('skipBtn').classList.remove('show');
+    curObj=null; return;
   }
+  document.getElementById('aEmpty').style.display='none';
+  document.getElementById('aContent').style.display='block';
+  document.getElementById('skipBtn').classList.add('show');
+  actW=shuffle([...selW]); curIdx=0; loadWord();
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=~~(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function loadWord(){
+  if(!actW.length)actW=shuffle([...selW]);
+  curObj=actW[curIdx%actW.length]; curIdx++;
+  typed=[];
+  hideSt();
+  document.getElementById('arena').className='arena';
+  document.getElementById('aBsp').classList.remove('show');
+  document.getElementById('aTyped').textContent='';
+  renderWord(); updateProg();
+}
+function nextWord(){
+  if(!curObj)return;
+  document.getElementById('aContent').classList.add('pop');
+  setTimeout(()=>document.getElementById('aContent').classList.remove('pop'),320);
+  WD++; document.getElementById('wd').textContent=WD;
+  updateAcc(); loadWord();
+}
 
-  if (!currentWordObj) return;
+// ══════════════════════════════════════════════════════
+// RENDER WORD
+// ══════════════════════════════════════════════════════
+function renderWord(){
+  if(!curObj)return;
+  const chars=[...curObj.w];
+  document.getElementById('aMeaning').innerHTML=
+    `<span class="a-tag">${TYPE_LABELS[curObj.type]||curObj.type}</span> ${curObj.m}`;
+  document.getElementById('aWord').innerHTML=
+    chars.map((c,i)=>`<span class="ch ${i===0?'cur':'pend'}">${c}</span>`).join('');
+  document.getElementById('aRoman').textContent=curObj.r;
+}
+function refreshChars(){
+  if(!curObj)return;
+  const pos=typed.length;
+  const chars=[...curObj.w];
+  document.querySelectorAll('#aWord .ch').forEach((s,i)=>{
+    s.className='ch '+(i<pos?(typed[i]==='ok'?'ok':'bad'):(i===pos?'cur':'pend'));
+  });
+  document.getElementById('aTyped').textContent=pos>0?`${pos}/${chars.length} अक्षर`:'';
+}
 
-  // Backspace
-  if (e.key === 'Backspace') {
+// ══════════════════════════════════════════════════════
+// KEY HANDLERS
+// ══════════════════════════════════════════════════════
+function onKD(e){
+  if(e.key==='Shift'){shiftDown=true;setShiftUI(true);return;}
+  if(!curObj)return;
+  if(e.key==='Backspace'){
     e.preventDefault();
-    if (typedStates.length > 0) {
-      typedStates.pop();
-      updateCharDisplay();
-      hideStatus();
-      // Remove error state if no errors remain
-      const hasError = typedStates.some(s=>s==='error');
-      if (!hasError) {
-        document.getElementById('arena').classList.remove('has-error');
-        document.getElementById('backspaceHint').classList.remove('show');
+    if(typed.length>0){
+      typed.pop();refreshChars();hideSt();
+      if(!typed.some(s=>s==='bad')){
+        document.getElementById('arena').className='arena';
+        document.getElementById('aBsp').classList.remove('show');
       }
     }
     return;
   }
-
-  // Ignore modifier combos
-  if (e.ctrlKey || e.metaKey || e.altKey) return;
-  // Ignore non-character keys
-  if (e.key.length > 1) return;
-
-  const pos = typedStates.length;
-  const chars = [...currentWordObj.word];
-  if (pos >= chars.length) return;
-
+  if(e.ctrlKey||e.metaKey||e.altKey||e.key.length>1)return;
+  const pos=typed.length;
+  const chars=[...curObj.w];
+  if(pos>=chars.length)return;
   e.preventDefault();
-
-  const expectedChar = chars[pos];
-  const keyLower = e.key.toLowerCase();
-
-  // If shift was held, this is automatically an error
-  if (shiftDown) {
-    registerError(pos, keyLower, expectedChar, true);
-    return;
-  }
-
-  // Get what this key produces in normal (no-shift) InScript
-  const produced = inscript[keyLower] ? inscript[keyLower][0] : e.key;
-  const isCorrect = produced === expectedChar;
-
-  if (isCorrect) {
-    registerCorrect(pos, keyLower);
+  const expected=chars[pos];
+  const k=e.key.toLowerCase();
+  // Get what this key produces: normal or shift
+  const pair=INS[k]||[e.key,''];
+  const produced=shiftDown ? (pair[1]||'') : pair[0];
+  if(produced===expected){
+    markOk(pos,k);
   } else {
-    registerError(pos, keyLower, expectedChar, false);
+    // Shift was held but produced wrong char — error
+    // Or no shift but wrong char — error
+    markErr(pos,k, shiftDown && pair[0]===expected);
+  }
+}
+function onKU(e){if(e.key==='Shift'){shiftDown=false;setShiftUI(false);}}
+function markOk(pos,k){
+  typed.push('ok');SC++;document.getElementById('sc').textContent=SC;
+  flashKey(k,'ok');showSt('✓ सही!','ok');
+  document.getElementById('arena').className='arena ok-mode';
+  refreshChars();updateAcc();
+  const chars=[...curObj.w];
+  if(typed.length>=chars.length&&typed.every(s=>s==='ok'))setTimeout(()=>nextWord(),420);
+}
+function markErr(pos,k,shiftNotNeeded){
+  typed.push('bad');EC++;document.getElementById('ec').textContent=EC;
+  flashKey(k,'err');
+  document.getElementById('arena').className='arena err-mode';
+  document.getElementById('aBsp').classList.add('show');
+  if(shiftNotNeeded){
+    showSt('⚠ Shift मत दबाएं!','err');
+    const b=document.getElementById('shiftBan');
+    b.textContent='⚠ यहाँ Shift की जरूरत नहीं — बिना Shift के दबाएं!';
+    b.classList.add('show');
+    if(shiftTmr)clearTimeout(shiftTmr);
+    shiftTmr=setTimeout(()=>b.classList.remove('show'),2800);
+  }else showSt('✗ गलत!','err');
+  refreshChars();updateAcc();
+}
+
+// ══════════════════════════════════════════════════════
+// SHIFT UI
+// ══════════════════════════════════════════════════════
+function setShiftUI(on){
+  const pill=document.getElementById('shiftPill');
+  const kbDiv=document.getElementById('kbDiv');
+  const mode=document.getElementById('kbMode');
+  if(on){
+    pill.className='shift-pill on';pill.innerHTML='<span class="spill-dot"></span> Shift: ON ⇧';
+    kbDiv.classList.add('kb-shift');mode.className='kb-mode shift-on';mode.textContent='⇧ Shift Mode — Shifted characters active';
+  }else{
+    pill.className='shift-pill';pill.innerHTML='<span class="spill-dot"></span> Shift: OFF';
+    kbDiv.classList.remove('kb-shift');mode.className='kb-mode';mode.textContent='Normal Mode';
   }
 }
 
-function handleKeyUp(e) {
-  if (e.key === 'Shift') {
-    shiftDown = false;
-    updateShiftIndicator(false);
-  }
-}
-
-function registerCorrect(pos, keyLower) {
-  typedStates.push('correct');
-  correctTotal++;
-  document.getElementById('correctCount').textContent = correctTotal;
-  flashKey(keyLower, 'correct');
-  showStatus('✓ Correct!', 'correct');
-  updateCharDisplay();
-  updateAccuracy();
-
-  // Check if word complete and all correct
-  const chars = [...currentWordObj.word];
-  if (typedStates.length >= chars.length) {
-    const allCorrect = typedStates.every(s=>s==='correct');
-    if (allCorrect) {
-      setTimeout(()=>nextWord(), 450);
-    }
-    // If not all correct, user must use backspace to fix
-  }
-}
-
-function registerError(pos, keyLower, expectedChar, isShiftError) {
-  typedStates.push('error');
-  errorTotal++;
-  document.getElementById('errorCount').textContent = errorTotal;
-  flashKey(keyLower, 'error');
-  document.getElementById('arena').classList.add('has-error');
-  document.getElementById('backspaceHint').classList.add('show');
-
-  if (isShiftError) {
-    showStatus('⚠ Shift Error!', 'error');
-    // Show shift warning banner
-    const banner = document.getElementById('shiftWarning');
-    banner.classList.add('show');
-    if (shiftWarningTimer) clearTimeout(shiftWarningTimer);
-    shiftWarningTimer = setTimeout(()=>banner.classList.remove('show'), 2500);
-  } else {
-    showStatus('✗ Wrong key!', 'error');
-  }
-
-  updateCharDisplay();
-  updateAccuracy();
-  // Do NOT auto-advance — user must backspace and correct
-}
-
-// ===================== SHIFT INDICATOR =====================
-function updateShiftIndicator(on) {
-  const el = document.getElementById('shiftIndicator');
-  if (on) {
-    el.className = 'shift-indicator on';
-    el.innerHTML = '<span class="dot"></span> Shift: ON ⚠';
-  } else {
-    el.className = 'shift-indicator';
-    el.innerHTML = '<span class="dot"></span> Shift: OFF';
-  }
-}
-
-// ===================== KEY FLASH =====================
-function flashKey(key, type) {
-  const k = key === ';' ? ';' : key.toLowerCase();
-  document.querySelectorAll('.key').forEach(el => {
-    el.classList.remove('active-correct','active-error');
-    if (el.dataset.key === k) {
-      el.classList.add(type==='correct' ? 'active-correct' : 'active-error');
-    }
-  });
-  setTimeout(()=>{
-    document.querySelectorAll('.key').forEach(el=>el.classList.remove('active-correct','active-error'));
-  }, 350);
-}
-
-// ===================== KEYBOARD DISPLAY =====================
-function renderKeyboard() {
-  const div = document.getElementById('keyboardDisplay');
-  div.innerHTML = '';
-  ['top','home','bottom'].forEach(rowName => {
-    const row = document.createElement('div');
-    row.className = 'key-row';
-    keyRows[rowName].forEach(k => {
-      const [norm, shift] = inscript[k] || [k,''];
-      const keyEl = document.createElement('div');
-      keyEl.className = 'key' + (rowName==='home'?' home-row':'');
-      keyEl.dataset.key = k;
-      keyEl.innerHTML = `
-        <span class="hi-shift">${shift||''}</span>
-        <span class="hi">${norm||''}</span>
-        <span class="eng">${k.toUpperCase()}</span>`;
-      row.appendChild(keyEl);
+// ══════════════════════════════════════════════════════
+// KEYBOARD RENDER
+// ══════════════════════════════════════════════════════
+function renderKb(){
+  const div=document.getElementById('kbDiv');
+  div.innerHTML='';
+  KB_ROWS.forEach((row,ri)=>{
+    const rDiv=document.createElement('div'); rDiv.className='krow';
+    row.forEach(k=>{
+      const [n,s]=INS[k]||[k,''];
+      const rowType=KEY_ROW[k]||'num';
+      const el=document.createElement('div');
+      el.className='key'+(rowType==='home'?' home-row':rowType==='top'?' top-row':rowType==='bot'?' bot-row':'');
+      el.dataset.key=k;
+      el.innerHTML=`<span class="ksh">${s||''}</span><span class="knm">${n||k}</span><span class="klt">${k.toUpperCase()}</span>`;
+      rDiv.appendChild(el);
     });
-    div.appendChild(row);
+    div.appendChild(rDiv);
+  });
+  // Space row
+  const sr=document.createElement('div'); sr.className='krow';
+  const sp=document.createElement('div'); sp.className='key space'; sp.dataset.key=' ';
+  sp.innerHTML=`<span class="ksh"></span><span class="knm" style="font-family:'Syne';font-size:.6rem;color:var(--muted)">SPACE</span><span class="klt"></span>`;
+  const bs=document.createElement('div'); bs.className='key wide'; bs.dataset.key='backspace';
+  bs.innerHTML=`<span class="ksh"></span><span class="knm" style="font-family:'Syne';font-size:.65rem;color:var(--muted)">⌫</span><span class="klt">bksp</span>`;
+  sr.appendChild(sp); sr.appendChild(bs); div.appendChild(sr);
+}
+function flashKey(k,type){
+  document.querySelectorAll('.key').forEach(el=>{
+    if(el.dataset.key===k){
+      el.classList.add(type==='ok'?'flash-ok':'flash-err');
+      setTimeout(()=>el.classList.remove('flash-ok','flash-err'),380);
+    }
   });
 }
 
-// ===================== STATUS =====================
-function showStatus(msg, type) {
-  const el = document.getElementById('statusBadge');
-  el.textContent = msg;
-  el.className = 'status-badge ' + type;
-  if (statusTimer) clearTimeout(statusTimer);
-  statusTimer = setTimeout(()=>hideStatus(), 900);
+// ══════════════════════════════════════════════════════
+// STATUS / STATS
+// ══════════════════════════════════════════════════════
+function showSt(msg,type){
+  const el=document.getElementById('aBadge');
+  el.textContent=msg;el.className='a-badge '+type;
+  if(stTmr)clearTimeout(stTmr);stTmr=setTimeout(()=>hideSt(),850);
 }
-function hideStatus() {
-  const el = document.getElementById('statusBadge');
-  el.className = 'status-badge';
-  el.style.display = 'none';
+function hideSt(){document.getElementById('aBadge').className='a-badge';}
+function updateAcc(){
+  const t=SC+EC;document.getElementById('accv').textContent=t===0?'—':Math.round(SC/t*100)+'%';
 }
-
-// ===================== STATS =====================
-function updateAccuracy() {
-  const total = correctTotal + errorTotal;
-  if (total===0) { document.getElementById('accuracy').textContent='—'; return; }
-  document.getElementById('accuracy').textContent = Math.round((correctTotal/total)*100)+'%';
+function updateProg(){
+  const p=selW.length?Math.min(WD/(selW.length*2)*100,100):0;
+  document.getElementById('pbarFill').style.width=p+'%';
 }
-
-function updateProgress() {
-  const pct = selectedWords.length>0 ? Math.min((wordsDone/(selectedWords.length*2))*100,100) : 0;
-  document.getElementById('progressFill').style.width = pct+'%';
+function resetStats(){
+  SC=0;EC=0;WD=0;
+  document.getElementById('sc').textContent='0';
+  document.getElementById('ec').textContent='0';
+  document.getElementById('wd').textContent='0';
+  document.getElementById('accv').textContent='—';
+  document.getElementById('pbarFill').style.width='0%';
+  if(curObj)loadWord();
 }
-
-function resetStats() {
-  correctTotal=0; errorTotal=0; wordsDone=0;
-  ['correctCount','errorCount','wordsDone'].forEach(id=>document.getElementById(id).textContent='0');
-  document.getElementById('accuracy').textContent='—';
-  document.getElementById('progressFill').style.width='0%';
-  if (currentWordObj) loadWord();
-}
-
-// ===================== ROW TABS =====================
-document.getElementById('rowTabs').addEventListener('click', e => {
-  const tab = e.target.closest('.tab');
-  if (!tab) return;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  tab.classList.add('active');
-  currentRow = tab.dataset.row;
-  selectedWords = [];
-  renderWordGrid();
-  startPractice();
-});
 
 init();
 </script>
